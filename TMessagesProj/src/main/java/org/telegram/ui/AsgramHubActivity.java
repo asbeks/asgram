@@ -394,7 +394,9 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             content.addView(AsgramUi.text(c,"The media network",21,p.text,true));AsgramUi.gap(content,12);
             content.addView(AsgramUi.text(c,"Official channels update from @ABDII_SABAA. The channel team can add an ASGRAM: @channel_one @channel_two line to its Telegram description. ASGRAM verifies each public channel and shows it after Feed refresh. Personal recommendations and advert links are not added automatically.",14,p.secondary,false));AsgramUi.gap(content,24);
             content.addView(AsgramUi.text(c,"Your privacy",21,p.text,true));AsgramUi.gap(content,12);
-            content.addView(AsgramUi.text(c,"ASGRAM is an independent Telegram client by Abdii Sabaa Media. Your Telegram account and chats use Telegram’s services. We do not copy your private chats or contacts to an Abdii Sabaa server.\n\nThe media feed loads public channel previews from Telegram. Saved articles and reading preferences are stored on this device.",14,p.secondary,false));
+            content.addView(AsgramUi.text(c,"ASGRAM is an unofficial Telegram app. Your Telegram account and chats use Telegram’s services. We do not copy your private chats or contacts to an ASGRAM server.\n\nThe feed loads public channel previews from Telegram. Saved articles and reading preferences are stored on this device.",14,p.secondary,false));
+            AsgramUi.gap(content,10);
+            content.addView(AsgramUi.button(c,"ASGRAM privacy policy",p,false,()->Browser.openUrl(getParentActivity(),"https://asbeks.github.io/asgram/privacy.html")),AsgramUi.lp(-1,-2));
             AsgramUi.gap(content,20);
             content.addView(AsgramUi.button(c,"Notification settings",p,false,()->{
                 Intent intent=new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,c.getPackageName());
@@ -402,12 +404,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
                 getParentActivity().startActivity(intent);
             }),AsgramUi.lp(-1,-2));
             AsgramUi.gap(content,10);
-            content.addView(AsgramUi.button(c,"Contact Abdii Sabaa",p,false,()->Browser.openUrl(getParentActivity(),"https://t.me/AbdiiSabaaDm")),AsgramUi.lp(-1,-2));
+            content.addView(AsgramUi.button(c,"Contact support",p,false,()->Browser.openUrl(getParentActivity(),"https://t.me/fulbeksupport")),AsgramUi.lp(-1,-2));
             AsgramUi.gap(content,10);
             content.addView(AsgramUi.button(c,"Telegram API terms",p,false,()->Browser.openUrl(getParentActivity(),"https://core.telegram.org/api/terms")),AsgramUi.lp(-1,-2));
             AsgramUi.gap(content,10);
             content.addView(AsgramUi.button(c,"Telegram open-source credits",p,false,()->Browser.openUrl(getParentActivity(),"https://github.com/DrKLO/Telegram")),AsgramUi.lp(-1,-2));
-            AsgramUi.gap(content,24);content.addView(AsgramUi.text(c,"ASGRAM 0.3.0 · Development build\nBuilt on Telegram’s open-source Android client.\nNot affiliated with Telegram.",12,p.secondary,false));
+            AsgramUi.gap(content,24);content.addView(AsgramUi.text(c,"ASGRAM 0.3.0 · Unofficial Telegram app\nBuilt on Telegram’s open-source Android client.\nNot affiliated with Telegram.",12,p.secondary,false));
         }
         @Override public boolean isLightStatusBar() {return fragmentView==null||!new AsgramUi.Palette(fragmentView.getContext()).dark;}
     }

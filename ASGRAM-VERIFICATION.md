@@ -1,39 +1,24 @@
-# ASGRAM native design verification
+# ASGRAM 0.3.0 (4) release verification
 
-Checked October 29, 2026. Internal debug build 0.2.0 (3), com.abdiisabaa.asgram, arm64, Android 6+.
+Checked October 29, 2026. Native Telegram Android 13.1.1 fork, com.abdiisabaa.asgram, Android 6+.
 
-## Implemented
+## Confirmed
 
-- Official Telegram Android 13.1.1 source, upstream commit 3de37c8; the official upstream HEAD was checked on October 29 and remained at that commit.
-- Matching official native library from Telegram 13.1.1 (7237). Vendor signer and APK/native hashes are recorded in Tools/asgram/native-provenance.json. This internal build reuses that native binary; it is not a complete native C++ rebuild.
-- ASGRAM native welcome with its own A/conversation illustration, a single Start Messaging action, language-only selection and paired light/dark appearance.
-- ASGRAM and ASGRAM Night native themes, including readable input hints, selection borders and cursor colors. Custom/imported themes are preserved; all original themes remain available.
-- ASGRAM wordmark, launcher and notification glyph. The former media hub remains in source with no active entry.
-- Standard native production LoginActivity. The developer backend checkbox is omitted unless an existing session already uses the test network.
-- Signed-in non-members may receive one optional Abdii Sabaa invitation. View channel opens the native channel; Not now dismisses it. There is no automatic subscription and no membership gate. A separate channel shortcut remains available.
-- Verbose client logging is off by default; private API credentials remain ignored and restricted locally.
+- Signed APK and Android App Bundle built successfully. Private upload key is restricted and ignored.
+- All four Android ABIs included. Both arm64 and x86_64 native libraries have 16 KB ELF load alignment.
+- Thirteen JUnit feed/directory/album tests passed, no failures, errors or skips. Six brand/privacy boundary checks and 17 separate premium-shop server tests passed.
+- Real sign-in completed by the account holder earlier. Native chats, real five-item photo albums (including page 2), Feed, Spaces, filters and light/dark theme continuity were inspected in the emulator.
+- A separate debug-only StorePreviewActivity is used for current Play screenshots. English synthetic posts, generic channel icons and an illustrated landscape replace all account/publisher content. This activity is absent from the release manifest.
+- No current store capture contains the signed-in private chat list, profile, phone number, real publisher logo or media name.
+- ASGRAM was created in Play Console, app ID 4974411356411501708, following specific user approval of legal declarations.
+- Own Firebase Android app registered and module configuration included. Analytics and advertising-ID collection disabled.
+- Corresponding modified source published at https://github.com/asbeks/asgram/tree/codex/asgram-13.1 . Privacy page is live at https://asbeks.github.io/asgram/privacy.html (HTTP 200).
 
-## Verification
+## Remaining before claiming public availability
 
-- Final assembleDebug passed in 16 seconds; log: .asgram/build-native-brand-final.log. The preceding full Java build and six parser tests also passed.
-- Six retained feed-parser JUnit tests passed, zero failures/errors/skips. They test the deferred feed parser, not authenticated messaging.
-- Four Python brand/boundary checks passed: paired theme contrast, own identity/native login, no automatic channel subscription, and production sign-in. Contrast checks include focused-field labels, hints and borders.
-- APK signature verification passed for v1 and v2. This is a debug-signed internal APK, not a release-signed distribution artifact.
-- Installed version 0.2.0 (3) on Medium Phone API 36.1, emulator-5554. App data was retained during replacement, and the temporary emulator storage reserve was restored to its original null value.
-- Visually checked final native welcome in light and dark mode, readable language list without translation/premium controls, and standard phone sign-in without the Test Backend option.
-- No new crash-buffer entries appeared during the final pre-login checks. The app process remained alive. This is limited runtime evidence, not proof of every Telegram feature.
-- Actual phone captures: .asgram/screenshots/asgram-0.2.0-welcome-light.png and asgram-0.2.0-welcome-dark.png. Additional language/sign-in evidence is saved alongside them.
+- Complete Play listing, app-content forms, release upload and review submission; verify the actual resulting status.
+- Verify Firebase/Telegram background push delivery end to end. Registration and build success do not prove notification delivery.
+- Final signed-artifact runtime checks; call/media-permission flows and every inherited Telegram setting are not exhaustively tested.
+- Premium purchases with birr are not available: the separate server service remains disabled pending a dedicated funded gift bot, real pricing and live fulfillment verification.
 
-## Remaining before public release
-
-- Account-holder completion of real Telegram sign-in, including their own login code and two-step password. No code or password should be sent in chat.
-- Authenticated conversations, groups, channels, downloads, calls, session recovery and device permissions.
-- Authenticated invitation/shortcut behavior and the themed messaging screens.
-- ASGRAM-owned Firebase and Telegram push configuration, plus delivery while the app is closed. These are not proven by the inherited source or pre-login tests.
-- Release signing, required ABIs, corresponding modified-source publication, Play Console setup and review.
-
-No ASGRAM Play Store release has been submitted. No account subscription, real message or phone-login request was sent during these UI checks.
-
-Final APK: ASGRAM/build/outputs/apk/debug/ASGRAM-debug.apk
-
-Final APK SHA-256: c2c13d9bc2b659fb5859f0f402d2428fc19eb8238700945cdea423c3135189fa
+Artifact checksums and current submission status are recorded in outputs/play/release-receipt.json. That directory is ignored; credentials are not published.
