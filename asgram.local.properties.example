@@ -1,0 +1,3 @@
+# Copy to asgram.local.properties and add your own registered Telegram app credentials.
+ASGRAM_API_ID=0
+ASGRAM_API_HASH=

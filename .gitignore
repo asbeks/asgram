@@ -14,3 +14,11 @@ TMessagesProj_AppHockeyApp/afat/
 TMessagesProj_AppStandalone/afat/
 TMessagesProj_AppHuawei/afat/
 TMessagesProj/jni/ffmpeg/build_android
+
+# ASGRAM local build inputs and private credentials
+.asgram/
+asgram.local.properties
+local.properties
+ASGRAM/keystore.properties
+ASGRAM/*.jks
+outputs/

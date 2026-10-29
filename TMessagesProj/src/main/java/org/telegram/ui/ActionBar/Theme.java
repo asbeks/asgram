@@ -1646,9 +1646,9 @@ public class Theme {
             if (isDark != UNKNOWN) {
                 return isDark == DARK;
             }
-            if ("Dark Blue".equals(name) || "Night".equals(name)) {
+            if ("ASGRAM Night".equals(name) || "Dark Blue".equals(name) || "Night".equals(name)) {
                 isDark = DARK;
-            } else if ("Blue".equals(name) || "Arctic Blue".equals(name) || "Day".equals(name)) {
+            } else if ("ASGRAM".equals(name) || "Blue".equals(name) || "Arctic Blue".equals(name) || "Day".equals(name)) {
                 isDark = LIGHT;
             }
             if (isDark == UNKNOWN) {
@@ -4016,6 +4016,19 @@ public class Theme {
         themes.add(themeInfo);
         themesDict.put("Night", themeInfo);
 
+        // ASGRAM's paired native themes; all original themes remain available to users.
+        ThemeInfo asgramDay = new ThemeInfo();
+        asgramDay.name = "ASGRAM"; asgramDay.assetName = "asgram.attheme";
+        asgramDay.previewBackgroundColor = 0xfff5f8f5; asgramDay.previewInColor = 0xffffffff;
+        asgramDay.previewOutColor = 0xffe4f1e8; asgramDay.sortIndex = -2;
+        themes.add(asgramDay); themesDict.put(asgramDay.name, asgramDay);
+        ThemeInfo asgramNight = new ThemeInfo();
+        asgramNight.name = "ASGRAM Night"; asgramNight.assetName = "asgram-night.attheme";
+        asgramNight.previewBackgroundColor = 0xff111814; asgramNight.previewInColor = 0xff19231d;
+        asgramNight.previewOutColor = 0xff253f30; asgramNight.sortIndex = -1;
+        themes.add(asgramNight); themesDict.put(asgramNight.name, asgramNight);
+        currentNightTheme = asgramNight;
+
         String themesString = themeConfig.getString("themes2", null);
 
         int remoteVersion = themeConfig.getInt("remote_version", 0);
@@ -4066,6 +4079,16 @@ public class Theme {
         try {
             final ThemeInfo themeDarkBlue = themesDict.get("Dark Blue");
 
+            if (!preferences.getBoolean("asgram_native_theme_v1", false)) {
+                String previous = preferences.getString("theme", null);
+                SharedPreferences.Editor brand = preferences.edit().putBoolean("asgram_native_theme_v1", true);
+                if (previous == null || "Blue".equals(previous) || "Day".equals(previous) || "Night".equals(previous) || "Dark Blue".equals(previous)) {
+                    brand.putString("theme", "Night".equals(previous) || "Dark Blue".equals(previous) ? "ASGRAM Night" : "ASGRAM");
+                }
+                String oldNight = preferences.getString("nighttheme", null);
+                if (oldNight == null || "Night".equals(oldNight) || "Dark Blue".equals(oldNight)) brand.putString("nighttheme", "ASGRAM Night");
+                brand.apply();
+            }
             String theme = preferences.getString("theme", null);
             if ("Default".equals(theme)) {
                 applyingTheme = themesDict.get("Blue");
@@ -4281,7 +4304,8 @@ public class Theme {
             throw new RuntimeException(e);
         }
         if (applyingTheme == null) {
-            applyingTheme = defaultTheme;
+            applyingTheme = themesDict.get("ASGRAM");
+            currentDayTheme = applyingTheme;
         } else {
             currentDayTheme = applyingTheme;
         }

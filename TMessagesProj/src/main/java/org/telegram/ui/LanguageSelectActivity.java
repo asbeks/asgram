@@ -65,6 +65,9 @@ import java.util.Iterator;
 import java.util.Timer;
 
 public class LanguageSelectActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
+    private boolean languageOnly;
+    public LanguageSelectActivity setLanguageOnly(boolean value) { languageOnly=value; return this; }
+
 
     private ListAdapter listAdapter;
     private RecyclerListView listView;
@@ -607,12 +610,12 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
             } else {
                 int count = 0;
                 count++;
-                if (getMessagesController().isTranslationsManualEnabled() || getMessagesController().isTranslationsAutoEnabled()) {
+                if ((!languageOnly && getMessagesController().isTranslationsManualEnabled()) || (!languageOnly && getMessagesController().isTranslationsAutoEnabled())) {
                     count++;
-                    if (getMessagesController().isTranslationsManualEnabled()) {
+                    if ((!languageOnly && getMessagesController().isTranslationsManualEnabled())) {
                         count++;
                     }
-                    if (getMessagesController().isTranslationsAutoEnabled() && !getMessagesController().premiumFeaturesBlocked()) {
+                    if ((!languageOnly && getMessagesController().isTranslationsAutoEnabled()) && !getMessagesController().premiumFeaturesBlocked()) {
                         count++;
                     }
                     if (getChatValue() || getContextValue()) {
@@ -800,7 +803,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                 }
                 case VIEW_TYPE_HEADER: {
                     HeaderCell header = (HeaderCell) holder.itemView;
-                    header.setText(position == 0 && (getMessagesController().isTranslationsManualEnabled() || getMessagesController().isTranslationsAutoEnabled()) ? LocaleController.getString(R.string.TranslateMessages) : LocaleController.getString(R.string.Language));
+                    header.setText(position == 0 && ((!languageOnly && getMessagesController().isTranslationsManualEnabled()) || (!languageOnly && getMessagesController().isTranslationsAutoEnabled())) ? LocaleController.getString(R.string.TranslateMessages) : LocaleController.getString(R.string.Language));
                     break;
                 }
             }
@@ -812,10 +815,10 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
             if (search) {
                 return VIEW_TYPE_LANGUAGE;
             } else {
-                if (getMessagesController().isTranslationsManualEnabled() || getMessagesController().isTranslationsAutoEnabled()) {
+                if ((!languageOnly && getMessagesController().isTranslationsManualEnabled()) || (!languageOnly && getMessagesController().isTranslationsAutoEnabled())) {
                     settingsFromPosition = position - i;
                     if (i-- == 0) return VIEW_TYPE_HEADER;
-                    if (getMessagesController().isTranslationsManualEnabled()) {
+                    if ((!languageOnly && getMessagesController().isTranslationsManualEnabled())) {
                         if (i-- == 0) {
                             manualTranslationPosition = position;
                             return VIEW_TYPE_SWITCH;
@@ -823,7 +826,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     } else {
                         manualTranslationPosition = -1;
                     }
-                    if (getMessagesController().isTranslationsAutoEnabled() && !getMessagesController().premiumFeaturesBlocked()) {
+                    if ((!languageOnly && getMessagesController().isTranslationsAutoEnabled()) && !getMessagesController().premiumFeaturesBlocked()) {
                         if (i-- == 0) {
                             autoTranslationPosition = position;
                             return VIEW_TYPE_SWITCH;
