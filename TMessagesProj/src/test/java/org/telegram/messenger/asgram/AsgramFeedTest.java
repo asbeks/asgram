@@ -46,4 +46,43 @@ public class AsgramFeedTest {
         assertFalse(post.text.contains("\n\n\n"));
     }
 
+    @Test public void skipsSymbolOnlyLinesWhenChoosingARealHeadline() {
+        AsgramFeed.Post post=new AsgramFeed.Post("ABDII_SABAA/45","News","ABDII_SABAA","Abdii Sabaa","🔴\n⚽️\nA meaningful headline\nFull report.","","");
+        assertEquals("A meaningful headline",post.title());
+    }
+    @Test public void featuresARecentRealPhotoWithoutMutatingTheSource() {
+        AsgramFeed.Post newest=new AsgramFeed.Post("ABDII_SABAA/46","News","ABDII_SABAA","Abdii Sabaa","Newest text","","2026-10-29T09:00:00Z");
+        AsgramFeed.Post picture=new AsgramFeed.Post("ABDII_SABAA/45","News","ABDII_SABAA","Abdii Sabaa","Recent photo report","https://cdn4.telesco.pe/a.jpg","2026-10-29T08:00:00Z");
+        List<AsgramFeed.Post> original=java.util.Arrays.asList(newest,picture);
+        assertEquals(picture,AsgramFeed.featuredFirst(original).get(0));
+        assertEquals(newest,original.get(0));
+    }
+    @Test public void neverFeaturesAnOldPhotoAheadOfNewReports() {
+        AsgramFeed.Post newest=new AsgramFeed.Post("ABDII_SABAA/46","News","ABDII_SABAA","Abdii Sabaa","Newest text","","2026-10-29T09:00:00Z");
+        AsgramFeed.Post old=new AsgramFeed.Post("ABDII_SABAA/45","News","ABDII_SABAA","Abdii Sabaa","Old photo","https://cdn4.telesco.pe/a.jpg","2026-10-20T08:00:00Z");
+        assertEquals(newest,AsgramFeed.featuredFirst(java.util.Arrays.asList(newest,old)).get(0));
+    }
+    @Test public void discoversOnlyExplicitEditorialDirectoryEntries() {
+        List<String> list=AsgramDirectory.declaredChannels("Contact @advertiser\nASGRAM: @OurSports @OurLearning\nOther @NotOfficial");
+        assertEquals(java.util.Arrays.asList("oursports","ourlearning"),list);
+        assertTrue(AsgramDirectory.declaredChannels("Join @advertiser for more").isEmpty());
+    }
+    @Test public void boundsDirectoryEntriesAndRejectsExecutableLinks() {
+        assertTrue(AsgramDirectory.declaredChannels("ASGRAM: https://evil.example @a").isEmpty());
+        StringBuilder text=new StringBuilder("ASGRAM: ");for(int i=0;i<20;i++)text.append("@channel_").append(i).append(" ");
+        assertEquals(8,AsgramDirectory.declaredChannels(text.toString()).size());
+    }
+    @Test public void combinesAlbumsWithoutHidingTheCaptionOrLosingPhotos() {
+        AsgramFeed.Post first=new AsgramFeed.Post("ABDII_SABAA/50","News","ABDII_SABAA","Abdii Sabaa","","","2026-10-29T09:00:00Z");first.groupedId=7;
+        AsgramFeed.Post caption=new AsgramFeed.Post("ABDII_SABAA/51","News","ABDII_SABAA","Abdii Sabaa","Real album caption","","2026-10-29T09:00:01Z");caption.groupedId=7;
+        org.telegram.tgnet.TLRPC.TL_message a=new org.telegram.tgnet.TLRPC.TL_message();a.id=50;first.nativeMessage=a;
+        org.telegram.tgnet.TLRPC.TL_message b=new org.telegram.tgnet.TLRPC.TL_message();b.id=51;caption.nativeMessage=b;
+        List<AsgramFeed.Post> result=AsgramFeed.mergeAlbums(java.util.Arrays.asList(first,caption));
+        assertEquals(1,result.size());assertEquals("Real album caption",result.get(0).text);assertEquals(2,result.get(0).mediaCount());assertEquals(50,result.get(0).nativeAlbum.get(0).id);
+    }
+    @Test public void albumIdsDoNotMergeAcrossDifferentChannels() {
+        AsgramFeed.Post first=new AsgramFeed.Post("ABDII_SABAA/50","News","ABDII_SABAA","Abdii Sabaa","One","","2026-10-29T09:00:00Z");first.groupedId=7;
+        AsgramFeed.Post second=new AsgramFeed.Post("abdii_sabaa_university/51","Education","abdii_sabaa_university","University","Two","","2026-10-29T09:00:01Z");second.groupedId=7;
+        List<AsgramFeed.Post> result=AsgramFeed.mergeAlbums(java.util.Arrays.asList(first,second));assertEquals(2,result.size());assertEquals(second.id,result.get(0).id);
+    }
 }

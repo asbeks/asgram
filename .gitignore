@@ -21,4 +21,5 @@ asgram.local.properties
 local.properties
 ASGRAM/keystore.properties
 ASGRAM/*.jks
+ASGRAM/google-services.json
 outputs/

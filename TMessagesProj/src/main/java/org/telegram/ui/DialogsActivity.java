@@ -3220,7 +3220,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         ActionBarMenu menu = actionBar.createMenu();
         menu.setTranslationX(-dp(5));
         if (!onlySelect && initialDialogsType == DIALOGS_TYPE_DEFAULT && folderId == 0 && communityId == 0 && TextUtils.isEmpty(searchString)) {
-            menu.addItem(41002, R.drawable.asgram_notification).setContentDescription("Explore Abdii Sabaa");
+            menu.addItem(41002, R.drawable.asgram_hub).setContentDescription("Private chats, groups, channels and bots");
         }
         searchItem = menu.addItem(0, R.drawable.outline_header_search).setIsSearchField(true, false);
         searchItem.setOnClickListener(v -> {
@@ -3864,7 +3864,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
-                if (id == 41002) { org.telegram.ui.asgram.AsgramCommunityInvitation.open(DialogsActivity.this,currentAccount); return; }
+                if (id == 41002) { AsgramSpacesActivity spaces=new AsgramSpacesActivity(true); spaces.setCurrentAccount(currentAccount); presentFragment(spaces); return; }
 
                 if ((id == SearchViewPager.forwardItemId || id == SearchViewPager.gotoItemId || id == SearchViewPager.deleteItemId || id == SearchViewPager.speedItemId) && searchViewPager != null) {
                     searchViewPager.onActionBarItemClick(id);

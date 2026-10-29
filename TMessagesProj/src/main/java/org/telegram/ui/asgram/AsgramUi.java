@@ -26,16 +26,15 @@ public final class AsgramUi {
         public final boolean dark;
         public final int background, surface, text, secondary, primary, tint, outline, inverse;
         public Palette(Context c) {
-            String mode=prefs(c).getString("appearance","system");
-            dark=mode.equals("dark") || (mode.equals("system") && (c.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES);
-            background=dark?0xff111814:0xfff5f8f5;
-            surface=dark?0xff19231d:0xffffffff;
-            text=dark?0xffecf3ed:0xff13281c;
-            secondary=dark?0xffb4c5b9:0xff52665a;
-            primary=dark?0xff9bd7b6:0xff176b49;
-            tint=dark?0xff253f30:0xffe4f1e8;
-            outline=dark?0xff34483b:0xffdce6dd;
-            inverse=dark?0xff143422:0xffffffff;
+            dark=org.telegram.ui.ActionBar.Theme.isCurrentThemeDark();
+            background=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundGray);
+            surface=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhite);
+            text=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhiteBlackText);
+            secondary=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhiteGrayText2);
+            primary=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhiteBlueText);
+            tint=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_groupcreate_spanBackground);
+            outline=org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_divider);
+            inverse=androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE,primary)>=4.5?android.graphics.Color.WHITE:0xff111111;
         }
     }
     public static int dp(float n) { return AndroidUtilities.dp(n); }

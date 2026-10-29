@@ -7,5 +7,11 @@
   "native_sha256": "bb68375371583d3f90e0a7a11ec4ca6e4ba0f72ec04621b0d6783ff3b616495c",
   "vendor_signer_sha256": "49c1522548ebacd46ce322b6fd47f6092bb745d0f88082145caf35e14dcc38e1",
   "abi": "arm64-v8a",
-  "scope": "internal development build; matching official 13.1.1 source and native library"
+  "scope": "matching official 13.1.1 native libraries; all four ABIs, Java source modified for ASGRAM",
+  "native_libraries": {
+    "arm64-v8a": "bb68375371583d3f90e0a7a11ec4ca6e4ba0f72ec04621b0d6783ff3b616495c",
+    "armeabi-v7a": "6eacd748acd1d47c3ece0509c0cea77176aeb337bc0106855486922956d7276c",
+    "x86": "6a24ff650b7fb3102bd5deaf1cb5d4e2c027da9623fa560957c2dbdea1b245c0",
+    "x86_64": "178b041bdea1b4e4fd54df073e84d3dcd2c17e691a378e545570d0e8128b8427"
+  }
 }

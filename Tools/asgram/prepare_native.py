@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare the exact vendor native library used by the internal ASGRAM build."""
+"""Verify and prepare the matching vendor native libraries for ASGRAM."""
 import argparse
 import hashlib
 import json
@@ -10,8 +10,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 PROVENANCE = json.loads((Path(__file__).with_name("native-provenance.json")).read_text())
-ABI = PROVENANCE["abi"]
-ENTRY = f"lib/{ABI}/libtmessages.49.so"
 
 def sha256(path):
     digest = hashlib.sha256()
@@ -38,14 +36,18 @@ def main():
             temporary.unlink(missing_ok=True)
     if sha256(apk) != PROVENANCE["apk_sha256"]:
         raise ValueError("APK checksum does not match the pinned release.")
-    destination = cache / "nativeLibraries" / ABI / "libtmessages.49.so"
-    destination.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(apk) as archive:
-        data = archive.read(ENTRY)
-    if hashlib.sha256(data).hexdigest() != PROVENANCE["native_sha256"]:
-        raise ValueError("Native library checksum mismatch.")
-    destination.write_bytes(data)
-    print(f"Prepared {ABI} native library for source {PROVENANCE['source_commit']}.")
+        verified = {}
+        for abi, expected in PROVENANCE['native_libraries'].items():
+            data = archive.read(f'lib/{abi}/libtmessages.49.so')
+            if hashlib.sha256(data).hexdigest() != expected:
+                raise ValueError(f'Native library checksum mismatch for {abi}.')
+            verified[abi] = data
+    for abi, data in verified.items():
+        destination = cache / 'nativeLibraries' / abi / 'libtmessages.49.so'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+        print(f"Prepared {abi} native library for source {PROVENANCE['source_commit']}.")
 
 if __name__ == "__main__":
     try:

@@ -28,7 +28,7 @@ public final class AsgramFeedStore {
                 data=out.toString("UTF-8");
             } catch(Exception ignored) {}
         }
-        return decode(data);
+        return decodeFor(context,data);
     }
     public static Result refresh(Context context) {
         Map<String,AsgramFeed.Post> merged=new LinkedHashMap<>();
@@ -60,7 +60,7 @@ public final class AsgramFeedStore {
         AsgramUi.prefs(context).edit().putString("saved_articles",encode(posts)).apply();
         return !removed;
     }
-    public static List<AsgramFeed.Post> saved(Context context) {return decode(AsgramUi.prefs(context).getString("saved_articles","[]"));}
+    public static List<AsgramFeed.Post> saved(Context context) {return decodeFor(context,AsgramUi.prefs(context).getString("saved_articles","[]"));}
     public static boolean canLoadPhotos(Context context) {
         if(!AsgramUi.prefs(context).getBoolean("data_saver",true))return true;
         try {
@@ -74,20 +74,27 @@ public final class AsgramFeedStore {
         for(AsgramFeed.Post p:posts) {
             try {
                 JSONObject j=new JSONObject();j.put("id",p.id);j.put("category",p.category);j.put("channel",p.channel);
-                j.put("author",p.author);j.put("text",p.text);j.put("image",p.imageUrl);j.put("date",p.date);array.put(j);
+                j.put("grouped_id",p.groupedId);j.put("author",p.author);j.put("text",p.text);j.put("image",p.imageUrl);j.put("date",p.date);array.put(j);
             } catch(Exception ignored) {}
         }
         return array.toString();
     }
-    public static List<AsgramFeed.Post> decode(String data) {
+    public static void cache(Context c,List<AsgramFeed.Post> posts){AsgramUi.prefs(c).edit().putString("public_feed",encode(posts)).apply();}
+    private static List<AsgramFeed.Post> decodeFor(Context c,String data){
+        java.util.Set<String> channels=new java.util.HashSet<>();
+        try {JSONArray entries=new JSONArray(AsgramUi.prefs(c).getString("directory_verified","[]"));for(int i=0;i<Math.min(entries.length(),8);i++){String name=entries.getJSONObject(i).getString("username");if(name.matches("[A-Za-z][A-Za-z0-9_]{4,31}"))channels.add(name.toLowerCase(java.util.Locale.ROOT));}}catch(Exception ignored){}
+        return decode(data,channels);
+    }
+    public static List<AsgramFeed.Post> decode(String data){return decode(data,java.util.Collections.emptySet());}
+    private static List<AsgramFeed.Post> decode(String data,java.util.Set<String> trusted) {
         List<AsgramFeed.Post> posts=new ArrayList<>();
         try {
             JSONArray array=new JSONArray(data);
             for(int i=0;i<Math.min(array.length(),200);i++) {
                 JSONObject j=array.getJSONObject(i);String channel=j.optString("channel"),id=j.optString("id");
-                if(!AsgramFeed.allowedChannel(channel)||!id.matches("(?i)"+channel+"/[0-9]+"))continue;
+                if(!(AsgramFeed.allowedChannel(channel)||trusted.contains(channel.toLowerCase(java.util.Locale.ROOT)))||!id.matches("(?i)"+java.util.regex.Pattern.quote(channel)+"/[0-9]+"))continue;
                 String image=j.optString("image");if(!AsgramFeed.allowedImage(image))image="";
-                posts.add(new AsgramFeed.Post(id,j.optString("category"),channel,j.optString("author"),j.optString("text"),image,j.optString("date")));
+                AsgramFeed.Post post=new AsgramFeed.Post(id,j.optString("category"),channel,j.optString("author"),j.optString("text"),image,j.optString("date"));post.groupedId=j.optLong("grouped_id",0);posts.add(post);
             }
         } catch(Exception ignored) {}
         return posts;

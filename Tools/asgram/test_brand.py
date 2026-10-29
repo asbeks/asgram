@@ -34,4 +34,16 @@ class BrandTest(unittest.TestCase):
  def test_standard_signin_does_not_offer_the_development_network(self):
   source=(ROOT/'TMessagesProj/src/main/java/org/telegram/ui/LoginActivity.java').read_text()
   self.assertIn('final boolean allowTestBackend = getConnectionsManager().isTestBackend();',source)
+ def test_feed_does_not_read_private_chats_or_upload_account_content(self):
+  source=(ROOT/'TMessagesProj/src/main/java/org/telegram/messenger/asgram/AsgramNativeFeed.java').read_text()
+  self.assertIn('ChatObject.isChannelAndNotMegaGroup',source)
+  self.assertIn('chat.username.equalsIgnoreCase(entry.username)',source)
+  self.assertIn('bindRequestToGuid',source)
+  for mutation in ['TL_channels_joinChannel','addUserToChat','TL_messages_importChatInvite','sendMessage']:
+   self.assertNotIn(mutation,source)
+ def test_spaces_uses_native_creation_without_automatic_account_mutation(self):
+  source=(ROOT/'TMessagesProj/src/main/java/org/telegram/ui/AsgramSpacesActivity.java').read_text()
+  for capability in ['"Private"','"Groups"','"Channels"','"Bots"','new ChannelCreateActivity','new GroupCreateActivity','"createSecretChat"','"BotFather"']:
+   self.assertIn(capability,source)
+  self.assertNotIn('sendMessage(',source)
 if __name__=='__main__': unittest.main()

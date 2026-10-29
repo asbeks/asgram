@@ -15,6 +15,14 @@ import java.util.Set;
 public final class AsgramFeed {
     public static final class Post {
         public final String id, category, channel, author, text, imageUrl, date, url;
+        public org.telegram.tgnet.TLRPC.Photo nativePhoto;
+        public org.telegram.tgnet.TLRPC.Message nativeMessage;
+        public int nativeAccount;
+        public long groupedId;
+        public final List<org.telegram.tgnet.TLRPC.Message> nativeAlbum=new ArrayList<>();
+        public int mediaCount(){return Math.max(nativeAlbum.size(),hasPhoto()||hasVideo?1:0);}
+        public boolean hasVideo;
+        public boolean hasPhoto(){return nativePhoto!=null||!imageUrl.isEmpty();}
         public Post(String id, String category, String channel, String author, String text, String imageUrl, String date) {
             this.id=id; this.category=category; this.channel=channel; this.author=author;
             this.text=normalizeText(text); this.imageUrl=imageUrl; this.date=date; this.url="https://t.me/"+id;
@@ -31,11 +39,11 @@ public final class AsgramFeed {
             String[] lines=text.split("\\n");
             for (String line:lines) {
                 line=line.trim();
-                if (!line.isEmpty() && !line.startsWith("#") && !line.startsWith("SABA GUDDAA") && !line.startsWith("MIIDIYAA @")) {
+                if (!line.isEmpty() && line.codePoints().anyMatch(Character::isLetterOrDigit) && !line.startsWith("#") && !line.startsWith("SABA GUDDAA") && !line.startsWith("MIIDIYAA @")) {
                     return line;
                 }
             }
-            return text.isEmpty() ? "Photo update" : text.substring(0,Math.min(160,text.length()));
+            return text.isEmpty() ? (hasVideo?"Video update":"Photo update") : text.substring(0,Math.min(160,text.length()));
         }
     }
     private static String normalizeText(String text) {
@@ -82,6 +90,40 @@ public final class AsgramFeed {
             result.add(new Post(id,category,channel,category.equals("News")?"Abdii Sabaa":"Abdii Sabaa University",text,image,time==null?"":time.attr("datetime")));
         }
         result.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));
+        return result;
+    }
+    /** One editorial post per Telegram album; caption and every media item are preserved. */
+    public static List<Post> mergeAlbums(List<Post> source) {
+        java.util.Map<String,List<Post>> groups=new java.util.LinkedHashMap<>();
+        for(Post p:source){String key=p.groupedId==0?p.id:p.channel.toLowerCase(Locale.ROOT)+"/album/"+p.groupedId;groups.computeIfAbsent(key,k->new ArrayList<>()).add(p);}
+        List<Post> result=new ArrayList<>();
+        for(List<Post> group:groups.values()) {
+            Post caption=group.get(0);long newest=caption.timestamp();String newestDate=caption.date;
+            java.util.Map<Integer,org.telegram.tgnet.TLRPC.Message> media=new java.util.TreeMap<>();
+            for(Post p:group){
+                if((caption.text.isEmpty()&&!p.text.isEmpty())||(caption.nativeMessage==null&&p.nativeMessage!=null&&!p.text.isEmpty()))caption=p;
+                if(p.timestamp()>newest){newest=p.timestamp();newestDate=p.date;}
+                if(p.nativeMessage!=null)media.put(p.nativeMessage.id,p.nativeMessage);
+                for(org.telegram.tgnet.TLRPC.Message m:p.nativeAlbum)media.put(m.id,m);
+            }
+            Post album=new Post(caption.id,caption.category,caption.channel,caption.author,caption.text,caption.imageUrl,newestDate);
+            album.nativeMessage=caption.nativeMessage;album.nativeAccount=caption.nativeAccount;album.nativePhoto=caption.nativePhoto;album.groupedId=caption.groupedId;album.hasVideo=caption.hasVideo;
+            for(org.telegram.tgnet.TLRPC.Message m:media.values()){album.nativeAlbum.add(m);if(m.media!=null){if(album.nativePhoto==null&&m.media.photo!=null)album.nativePhoto=m.media.photo;if(m.media.document!=null)album.hasVideo=true;}}
+            result.add(album);
+        }
+        result.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));return result;
+    }
+    /** Choose a recent real photo lead, preserving every other story's chronological order. */
+    public static List<Post> featuredFirst(List<Post> source) {
+        List<Post> result=new ArrayList<>(source);
+        if(result.isEmpty())return result;
+        long newest=result.get(0).timestamp();
+        for(int i=0;i<Math.min(result.size(),8);i++) {
+            Post post=result.get(i);
+            if(post.hasPhoto()&&!post.text.isEmpty()&&newest-post.timestamp()<=48L*60*60*1000) {
+                if(i>0){result.remove(i);result.add(0,post);}break;
+            }
+        }
         return result;
     }
     private AsgramFeed() {}

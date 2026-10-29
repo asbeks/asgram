@@ -1,44 +1,33 @@
 # ASGRAM Android
 
-ASGRAM is an unofficial native Telegram client by Abdii Sabaa Media. The current build is an internal development build: version 0.2.0, package com.abdiisabaa.asgram, arm64 Android 6 or newer.
+ASGRAM is an unofficial native Telegram app. Version 0.3.0 (4), package com.abdiisabaa.asgram, Android 6+.
 
-## What is implemented
-
-- Telegram Android 13.1.1 native messaging engine and screens, with ASGRAM’s own name and launcher/notification identity.
-- A native welcome screen with an A/conversation illustration, one Start Messaging action, paired light/dark appearance and a language-only picker.
-- Two native ASGRAM themes: forest green on white and mint on dark green. They theme the existing login, conversation, composer and settings controls; original/custom themes remain available.
-- A one-time invitation for signed-in non-members to explore @ABDII_SABAA, with Not now and a separate channel shortcut. Opening the channel does not subscribe the account.
-- Standard phone sign-in on Telegram’s production network; the developer network checkbox is hidden unless the account is already on a test backend.
-- Verbose client logging remains disabled by default.
-- The former media hub remains deferred and is not ASGRAM’s home screen.
-
-Core Telegram screens remain Android Java/native code. This is not a website wrapper and is not Flutter. A Flutter version is possible using a Telegram client engine such as TDLib, but would require a separate interface and integration project.
+The native Java interface includes Feed, Chats, Spaces, Settings and You. Telegram handles sign-in, conversations, private groups, channels, bots and calls. Feed reads verified public channels, offers Latest and For you, topic filters, saved stories, full readers and complete native photo albums. Native Telegram light, dark and custom themes remain available. Channel invitations are optional and require a deliberate Join action; accounts are never silently subscribed.
 
 ## Build
 
-The source is pinned to Telegram Android 13.1.1, commit 3de37c8. The internal arm64 build reuses the matching official native library. The exact APK and native-library checksums are recorded in Tools/asgram/native-provenance.json. This is not a full from-source native binary build.
+The source is pinned to Telegram Android 13.1.1, commit 3de37c8. Matching official native libraries are reused for arm64-v8a, armeabi-v7a, x86 and x86_64. Exact vendor APK and native hashes are in Tools/asgram/native-provenance.json. This is not a full native C++ rebuild.
 
-1. Install JDK 21, Android SDK 36, build-tools 36.1.0 and NDK 28.2.13676358.
-2. Initialize the Java dependencies: git submodule update --init --depth=1 TMessagesProj/lib/jlatexmath TMessagesProj_Modules/media
-3. Obtain the matching official 13.1.1 (7237) APK from Telegram's verified @TAndroidAPK release channel or the vendor download. Run python3 Tools/asgram/prepare_native.py --apk /path/to/Telegram.apk. It stops if the vendor APK or native-library checksum differs from Tools/asgram/native-provenance.json. The ordinary vendor URL may temporarily serve a previous release; do not mix versions.
-4. Set sdk.dir in ignored local.properties.
-5. Copy asgram.local.properties.example to ignored asgram.local.properties, enter the app's own registered API credentials, and restrict access to that file. Never commit those values.
-6. Run ./gradlew :ASGRAM:assembleDebug :TMessagesProj:testDebugUnitTest --tests org.telegram.messenger.asgram.AsgramFeedTest
+1. Install JDK 21, Android SDK 36 and build-tools 36.1.0.
+2. Initialize the Java submodules: `git submodule update --init --depth=1 TMessagesProj/lib/jlatexmath TMessagesProj_Modules/media`.
+3. Run `python3 Tools/asgram/prepare_native.py --apk /path/to/matching/Telegram.apk`.
+4. Set sdk.dir in ignored local.properties, and your own Telegram API ID/hash in ignored asgram.local.properties (see its example).
+5. Register com.abdiisabaa.asgram in your own Firebase project and put google-services.json in ASGRAM/. Configure Telegram application push delivery as documented at https://core.telegram.org/api/push-updates. Never reuse upstream Firebase credentials.
+6. For debug: `./gradlew :ASGRAM:assembleDebug :TMessagesProj:testDebugUnitTest --tests org.telegram.messenger.asgram.AsgramFeedTest`.
+7. For release, create a private upload keystore and ignored ASGRAM/keystore.properties with storeFile, storePassword, keyAlias and keyPassword. Run `./gradlew :ASGRAM:bundleRelease :ASGRAM:assembleRelease`.
 
-On this Mac, set JAVA_HOME to /Applications/Android Studio.app/Contents/jbr/Contents/Home before running Gradle.
+On this Mac, JAVA_HOME is /Applications/Android Studio.app/Contents/jbr/Contents/Home. Signing keys, Telegram API credentials and Firebase configuration must not be committed. Release tasks fail closed when their configuration is missing.
 
-The APK is ASGRAM/build/outputs/apk/debug/ASGRAM-debug.apk. Upstream source and its GPL licence are retained. A distributed release must also make the corresponding modified source available, excluding credentials and signing material.
+## Store artwork
 
-## Verification and remaining release work
+The debug-only StorePreviewActivity uses the production Feed and reader components with English demo content. It never reads account content into its Feed and is absent from release manifests. Store artwork must not show personal chats, profiles, contact details or the real publisher logo. Promo text describes ASGRAM as an unofficial Telegram app. See ASGRAM-PLAY-LISTING.md.
 
-The debug APK builds, signature verification passes, all six retained feed-parser tests pass, and four native-brand checks pass (theme contrast, own identity/native login, no automatic subscription, production sign-in). The native welcome has been inspected in light and dark mode on Medium Phone API 36.1. These checks do not establish authenticated messaging or closed-app push delivery. See ASGRAM-VERIFICATION.md for the final installed artifact and runtime evidence.
+## Premium gift service
 
-The following must still be verified before public release:
+services/premium-shop contains a separate server-side payment and fulfillment implementation with 17 tests. It is not connected to a live app checkout. Sales remain disabled until a dedicated funded gift bot, actual Star costs, production payment configuration and end-to-end fulfillment are verified. A successful build does not prove live payment delivery.
 
-- A real Telegram account sign-in, including code/2FA handling by the account holder.
-- Authenticated chats, channels, calls, downloads, session recovery and device permissions.
-- ASGRAM-owned Firebase configuration, Telegram application push configuration and background notification delivery while the app is closed.
-- Release signing, required ABIs, Play requirements and publication of corresponding modified source.
-- Authenticated messaging screens after all ASGRAM branding changes.
+## Verification
 
-Do not interpret a successful build or a working onboarding screen as proof of these untested flows. No Google Play release has been submitted for ASGRAM.
+Thirteen feed/directory/album JUnit tests and six brand/privacy-boundary checks passed. Real sign-in was completed by the account holder. Native chats, Feed, full albums, Spaces and light/dark continuity were checked in the emulator before store preparation. Background push delivery, calls and every native Telegram setting have not all been proven end to end. See ASGRAM-VERIFICATION.md for current release evidence and remaining checks.
+
+The corresponding modified source is published under the retained GPL license. No private credentials or signing material belong in the public repository.

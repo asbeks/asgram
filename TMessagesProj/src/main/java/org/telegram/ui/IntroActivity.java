@@ -1,7 +1,7 @@
 /*
  * ASGRAM native welcome, extending the official Telegram Android client.
  * GPL v2 or later. Original client copyright Nikolai Kudashov, 2013-2026.
- * Brand contract: forest/ink surfaces, the ASGRAM A, one clear messaging action.
+ * Brand contract: native Telegram theme roles, the ASGRAM A, one clear messaging action.
  * Preserve native account sign-in, language selection and user-controlled appearance.
  */
 package org.telegram.ui;
@@ -61,7 +61,7 @@ public class IntroActivity extends BaseFragment {
         top.addView(language, new LinearLayout.LayoutParams(-2, dp(48)));
         appearance = text(context, "", 13, true); appearance.setGravity(Gravity.CENTER); appearance.setPadding(dp(10),0,dp(10),0);
         appearance.setOnClickListener(v -> {
-            Theme.ThemeInfo next = Theme.getTheme(Theme.isCurrentThemeDark() ? "ASGRAM" : "ASGRAM Night");
+            Theme.ThemeInfo next = Theme.getTheme(Theme.isCurrentThemeDark() ? "Day" : "Dark Blue");
             if (next != null) { Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE; Theme.saveAutoNightThemeConfig(); Theme.applyTheme(next); updateColors(); }
         }); top.addView(appearance,new LinearLayout.LayoutParams(-2,dp(48))); content.addView(top);
         space(context, 0, 1);

@@ -1,28 +1,7 @@
 ---
 name: ASGRAM
-description: ASGRAM native identity and archived media-surface reference.
-colors:
-  primary: "#176b49"
-  background: "#f5f8f5"
-  surface: "#ffffff"
-  text: "#13281c"
-  secondary: "#52665a"
-  tint: "#e4f1e8"
-  outline: "#dce6dd"
-  inverse: "#ffffff"
-  primary-dark: "#9bd7b6"
-  background-dark: "#111814"
-  surface-dark: "#19231d"
-  text-dark: "#ecf3ed"
-  secondary-dark: "#b4c5b9"
-  tint-dark: "#253f30"
-  outline-dark: "#34483b"
-  inverse-dark: "#143422"
+description: A media-first native Android Telegram client that follows the selected Telegram theme.
 typography:
-  section:
-    fontFamily: "sans-serif"
-    fontSize: "21sp"
-    fontWeight: 700
   title:
     fontFamily: "sans-serif"
     fontSize: "16sp"
@@ -41,206 +20,204 @@ typography:
   caption:
     fontFamily: "sans-serif"
     fontSize: "12sp"
-    fontWeight: 400
   action:
     fontFamily: "sans-serif"
     fontSize: "14sp"
     fontWeight: 700
+  section:
+    fontFamily: "sans-serif"
+    fontSize: "21sp"
+    fontWeight: 700
 rounded:
   photo: "12dp"
-  destination-icon: "14dp"
   surface: "16dp"
   chip: "24dp"
+  channel-circle: "28dp"
 spacing:
-  compact: "6dp"
   tight: "8dp"
   related: "10dp"
   regular: "12dp"
-  card-gap: "14dp"
+  media-gap: "14dp"
   content: "16dp"
   screen: "20dp"
   reader: "22dp"
   section: "24dp"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.inverse}"
     typography: "{typography.title}"
     rounded: "{rounded.surface}"
     padding: "14dp 20dp"
   button-secondary:
-    backgroundColor: "{colors.tint}"
-    textColor: "{colors.primary}"
-    typography: "{typography.title}"
-    rounded: "{rounded.surface}"
-    padding: "14dp 20dp"
-  button-primary-dark:
-    backgroundColor: "{colors.primary-dark}"
-    textColor: "{colors.inverse-dark}"
     typography: "{typography.title}"
     rounded: "{rounded.surface}"
     padding: "14dp 20dp"
   chip-selected:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.inverse}"
     typography: "{typography.action}"
     rounded: "{rounded.chip}"
-    padding: "0dp 17dp"
     height: "48dp"
-  search:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
+  feed-chip:
+    padding: "0dp 18dp"
+    height: "48dp"
+    rounded: "{rounded.chip}"
+  lead-card:
     rounded: "{rounded.surface}"
-    height: "52dp"
-  article-card:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.surface}"
-    padding: "16dp 16dp 6dp"
+  photo:
+    rounded: "{rounded.photo}"
+  channel-circle:
+    rounded: "{rounded.channel-circle}"
+    size: "56dp"
 ---
 
 # Design System: ASGRAM
 
-## Current native client — 29 October 2026
+## Overview
 
-The existing forest-green brand now extends into the normal Telegram client. `IntroActivity` is a native Android welcome screen: ASGRAM masthead, language and appearance controls, a code-drawn A/conversation mark, a 36sp two-line headline, 16sp supporting copy, one 56dp Start Messaging button and the unofficial-client disclosure. It uses a fill-viewport ScrollView, 28dp side gutters and Android status/navigation insets. No media feed, fictional chat list or account gate replaces messaging.
+**Creative North Star: "The Native Media Front Desk"**
 
-`asgram.attheme` and `asgram-night.attheme` carry the same palette into native login, chat list, message bubbles, composer and settings. Original themes remain available; first-launch migration preserves custom/imported themes. Light UI uses white, forest `#176B49`, text `#13281C`, secondary `#52665A` and tint `#E4F1E8`. Dark UI uses `#19231D` surfaces, `#111814` ground, mint `#9BD7B6`, text `#ECF3ED`, secondary `#B4C5B9` and tint `#253F30`. The button uses white on forest or dark green on mint. Headers, secondary text and actions are checked for 4.5:1 contrast. Android system type, ripple feedback and native Back behavior remain the interaction language.
+ASGRAM puts the Abdii Sabaa network and real public stories at the front of a native Telegram client. A channel rail, clear topic selection and a prominent first story make the Feed easy to scan. Chats remain one tap away. The publisher's supplied logo, ASGRAM naming and client artwork carry the identity; the selected Telegram theme supplies interface colors.
 
-A separate A notification glyph replaces the application notification branding. Functional messaging icons and required Telegram attribution remain native. An optional community dialog offers View channel and Not now; the channel subscription remains a separate native Telegram action. The normal sign-in screen omits the development-backend checkbox.
-
-The sections below retain the prior media-hub design as a future reference. They are not the active app home.
-
-## Archived media-hub reference
-
-The former media welcome and hub have no active navigation entry. The following tokens and custom components document that retained experiment. The current app uses the native welcome and themes described above, followed by LoginActivity and DialogsActivity.
-
-**Creative North Star: "The Compact Native Destination Directory"**
-
-ASGRAM's own surfaces use forest green, pale green, white and near-black text to make Abdii Sabaa destinations and public stories easy to find on an Android phone. Rounded native controls and short, direct labels give the interface a calm, practical character. The supplied Abdii Sabaa logo remains a real identity asset; the separate ASGRAM mark identifies the client.
-
-This records the archived media experiment, extracted from `AsgramUi.java`, `AsgramWelcomeActivity.java` and `AsgramHubActivity.java`. Measurements are Android density-independent pixels (`dp`) and scaled text units (`sp`), not web CSS units. The welcome screen, media hub, article reader and ASGRAM settings are native Java views. Telegram's existing native screens own account and messaging conventions; this document does not replace their full visual system or imply that authenticated flows have been verified.
+This is the current internal Android design record, derived from `AsgramHubActivity.java`, `AsgramSpacesActivity.java`, `AsgramUi.java`, `MainTabsActivity.java` and native theme sources. The Feed is active and first in root navigation. It supersedes the archived-directory guidance and fixed forest palette recorded previously. The app remains native Android Java, with Telegram's existing account, messaging, theme controls and media viewer. This document records implemented design, not full feature verification or release status.
 
 **Key Characteristics:**
 
-- Compact destination rows and vertically stacked public story cards.
-- Forest-green actions with tonal surfaces in paired light and dark palettes.
-- Android system sans, scaled text and familiar Back, dialog, switch and keyboard behavior.
-- Flat resting surfaces, native ripple feedback on filled and tonal buttons.
-- Real media identity and public channel imagery, with user-controlled photo loading.
+- A media-first Feed with a real publisher/channel rail and a lead story followed by compact stories.
+- User-selected Telegram theme roles shared across Feed, Spaces and inherited screens.
+- Android system sans, scaled text, native navigation, dialogs, keyboard and touch feedback.
+- Flat custom story surfaces alongside inherited Telegram navigation and full-screen media behavior.
+- Visible loading, cached, failure, empty, saved, photo-loading and album-count states.
 
 ## Colors
 
-The palette is green-led and quiet: pale surfaces support near-black reading text in light mode; dark green surfaces support pale text and a mint action color in dark mode. The frontmatter values reproduce `AsgramUi.Palette`; unsuffixed keys are light mode and `-dark` keys are their dark-mode counterparts.
+ASGRAM follows the selected Telegram theme instead of imposing a forest-green interface. Color primitives are deliberately omitted from the frontmatter: the production source resolves native `Theme` keys at runtime, so a fixed light/dark hex palette would misstate the system. The bindings below are the source of truth. The sidecar records those native bindings and uses explicitly illustrative theme-asset snapshots for its HTML previews.
 
 ### Primary
 
-- **Forest Action / Mint Action** (`primary`, `primary-dark`): filled actions, selected category chips, active navigation, source names, and text actions.
-- **Leaf Tint / Deep Leaf Tint** (`tint`, `tint-dark`): secondary buttons, selected navigation icon grounds, destination icon grounds and unloaded photo areas. These are tonal support for the same green identity, not a second accent.
+- **Selected Theme Accent** (`Palette.primary`): resolved from `Theme.key_windowBackgroundWhiteBlueText`; used for source metadata, action text, selected category fills and custom glyphs.
+- **Selected Theme Tint** (`Palette.tint`): resolved from `Theme.key_groupcreate_spanBackground`; used for tonal buttons, channel grounds, unloaded photos and native selector feedback. It is support for the selected theme, not a separate brand accent.
+- **Readable Filled-Control Text** (`Palette.inverse`): white when its calculated contrast against `primary` is at least (4.5:1), otherwise near-black (`0xff111111`). The foreground is calculated from the actual selected accent, including in dark themes.
 
 ### Neutral
 
-- **Pale Green Ground / Night Green Ground** (`background`, `background-dark`): screen and action-bar backgrounds.
-- **White Surface / Raised Night Green** (`surface`, `surface-dark`): cards, search field and bottom navigation.
-- **Ink Green / Pale Reading Green** (`text`, `text-dark`): headings and primary reading text.
-- **Muted Green / Muted Pale Green** (`secondary`, `secondary-dark`): descriptions, timestamps, hints, inactive navigation and disclosure copy.
-- **Leaf Divider / Night Divider** (`outline`, `outline-dark`): the settings separator.
-- **White on Forest / Deep Green on Mint** (`inverse`, `inverse-dark`): text inside primary filled controls.
+| Custom role | Native source | Use |
+| --- | --- | --- |
+| `background` | `Theme.key_windowBackgroundGray` | Feed and Spaces grounds, custom action bars, reader and media settings |
+| `surface` | `Theme.key_windowBackgroundWhite` | Lead story, root navigation and native surface roles |
+| `text` | `Theme.key_windowBackgroundWhiteBlackText` | Headings, primary copy and reading text |
+| `secondary` | `Theme.key_windowBackgroundWhiteGrayText2` | Description, time, status and inactive labels |
+| `outline` | `Theme.key_divider` | Compact story and settings separators |
 
-**The Paired Palette Rule.** Choose every screen color through the current `Palette`; change background, surface, reading, secondary and action roles together when appearance changes.
+**The Selected Theme Rule.** Resolve custom screen colors through `AsgramUi.Palette` and the current native `Theme`; do not freeze ASGRAM's former forest colors into new surfaces.
 
-The Abdii Sabaa media logo uses its supplied colors on a white holder, including in dark mode. Its colors are an asset exception, not additional UI accent tokens. The broader identity's red is not implemented as a recurring custom UI accent and is not assigned a token here.
+The media logo keeps its supplied green, red, black and white artwork on a white circular holder. The launcher/splash uses ASGRAM artwork rather than Telegram's official mark. These identity assets do not force the surrounding UI palette. Album-count labels use white over a translucent dark ground for legibility on real media; this local overlay is not a global surface color.
+
+`Theme.java` migrates only prior ASGRAM default selections to Day or Dark Blue, retaining user-selected/custom themes. Appearance is controlled by the native `ThemeActivity`, reached from **Chat themes & appearance** in media settings. Legacy ASGRAM theme assets remain available choices; they are not mandatory defaults.
 
 ## Typography
 
-**Display Font:** Android `sans-serif`.
-**Body Font:** Android `sans-serif`.
+**Display Font:** Android system sans.
+**Body Font:** Android `sans-serif` in custom ASGRAM views; inherited Telegram views retain their native type helpers.
 
-The custom text helper uses `Typeface.NORMAL` or `Typeface.BOLD`, disables extra font padding and adds native line spacing. There is no separate display face, mono family, tracked uppercase system or fixed-ratio type scale.
+Custom text uses normal or bold weight, disables extra font padding and adds (3dp) to native line spacing. Sizes are Android scaled pixels (`sp`), not CSS pixels. There is no extracted fixed-ratio scale, separate editorial display face or mono system.
 
 ### Hierarchy
 
-- **Section:** bold, used for recurring feed and settings section headings.
-- **Title:** bold, used in destination rows, settings labels and buttons.
-- **Reading:** normal, used for the welcome description and full article body. Article body adds (7dp) to native line spacing and remains selectable.
-- **Body:** normal, used for story excerpts, explanatory copy and privacy information.
-- **Label:** normal or bold by function; destination descriptions are normal, source names and save actions are bold.
-- **Caption:** normal, used for status, disclosures and build information.
-- **Action:** bold, used for story reading actions and selected filter labels.
+- **Title:** bold destination/action names, shared buttons and Spaces rows.
+- **Reading:** normal article text, selectable in the native reader, with (7dp) added line spacing.
+- **Body:** descriptions, excerpts, privacy information and explanatory copy.
+- **Label:** source/save details and supporting settings information; weight follows its function.
+- **Caption:** small status and channel labels; channel names and source metadata are bold, status text is normal.
+- **Action:** bold reading actions and selected category labels.
+- **Section:** bold settings section headings.
 
-Local display sizes distinguish individual surfaces: the welcome heading uses (35sp), the hub masthead (29sp), settings introduction (27sp), article heading (23sp) and story-card heading (19sp). These are observed compositions, not a reusable proportional scale. Navigation labels and timestamps use (11sp); they are supporting information, not the body-reading standard. Default helper text adds (3dp) line spacing to the platform metrics rather than specifying an absolute line height.
+Local compositions use larger bold headings without creating a second font system: Feed is (32sp), Spaces (29sp), media settings introduction (27sp), article heading (23sp), lead-story heading (22sp), and compact-story heading (18sp). The Feed-direction brief's earlier (30sp) title is superseded by the built (32sp) value. Both story-heading variants are limited to three lines; the reader retains the full heading.
 
-**The Native Type Rule.** Express text sizes in `sp` and preserve Android font scaling; use font weight and size to establish hierarchy before adding decoration.
+**The Native Type Rule.** Preserve Android font scaling and native type metrics; use size, weight and spacing to distinguish title, metadata and body.
 
 ## Layout
 
-The custom screens are vertical native layouts. The welcome screen is a scrollable column with (28dp) horizontal padding; the hub uses (20dp) content gutters. The reader and settings use (22dp) side padding. The hub body is centered and capped at (780dp); the source has no multi-column layout or named device breakpoints.
+The active root has five visible destinations: Feed, Chats, Spaces, Settings or Calls, and You. Feed occupies the first position and opens by default. Settings and Calls share one configurable slot in Telegram's inherited root navigation. They are not six simultaneous tabs. Search, saved stories and refresh belong to the Feed action bar; saved stories are a Feed state rather than a root tab.
 
-The hub keeps its masthead, search, horizontally scrolling category chips and status above the flexible story scroller, with a persistent navigation row below. Category chips are the category selector. Story cards stack with the `card-gap` spacing; the article reader gives the full heading and body their own blocks. Long previews are limited to four heading lines and two excerpt lines, with ellipses; full reading happens in the native reader.
+Feed and Spaces use vertical `RecyclerView` lists with `LinearLayoutManager` and disabled item animation. Their headers scroll with the content. Each has (20dp) side gutters, status/action-bar top clearance and bottom padding equal to the navigation inset plus (104dp), allowing content to scroll clear of root navigation. The earlier custom (780dp) content cap and fixed four-column bottom row are not part of this implementation. Native root navigation has its own maximum width of (408dp), rounded surface and safe-area handling.
 
-Use the frontmatter spacing vocabulary for related content, card internals and section separation. Safe-area space comes from `AndroidUtilities.statusBarHeight` and `navigationBarHeight` on the relevant screens. The bottom row adds at least (8dp) or the navigation-bar inset, whichever is larger. Keep touch targets distinct from visual glyph size: chips and article actions occupy (48dp), main buttons have a minimum (52dp), and bottom navigation items a minimum (56dp).
+The first viewport presents the native ASGRAM bar, Feed heading, real publisher/network rail, topic row, refresh status and first story. The rail has four equal-width destinations with (56dp) circular grounds and labels below. Additional verified destinations can appear in a separate horizontal scroll row. Topic controls scroll horizontally; scrolling is intentional when the row exceeds the phone width.
+
+The lead story uses a surfaced container and optional wide (190dp) media preview. Later stories are compact rows with optional (92dp) square media at the trailing edge, separated by a divider. The full reader and media settings use (22dp) horizontal padding, navigation insets and vertical scrolling. Reader media is (230dp) high before expansion.
+
+**The Chronology Rule.** Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Topic labels are Latest, For you, News, Learning and Sports; Learning maps to the Education category. Do not turn this Feed-specific ordering into a global navigation rule.
+
+Shared primary/tonal buttons have a minimum (52dp) height. Category chips and read/save/share rows use (48dp) targets. Small glyph geometry does not define the touch target. Preserve safe-area space and Android Back behavior as these screens evolve.
 
 ## Elevation & Depth
 
-Custom ASGRAM surfaces have no explicit resting shadows or view elevation. Depth comes from screen/surface color changes, green tint grounds, rounded clipping and whitespace. Native Telegram dialogs and system controls keep their platform behavior; no custom shadow or motion timing has been extracted for them.
+Custom Feed and Spaces content is flat at rest: no explicit card shadow or view-elevation ladder is applied. Surfaces, tint grounds, separators and whitespace create hierarchy. Feed and Spaces action bars explicitly disable cast shadows. This does not prohibit Telegram's native depth, blur, animation or full-screen overlays: the inherited main tabs, dialogs and `PhotoViewer` own their existing behavior.
 
-**The Tonal Depth Rule.** Separate custom resting surfaces through `background`, `surface` and `tint`; do not introduce a shadow ladder that the native custom screens do not use.
+**The Native Depth Rule.** Keep custom story/list surfaces flat while preserving the inherited Telegram component's own depth and interaction behavior.
+
+The main tab container currently uses a rounded theme surface. Shared filled/tonal buttons use `RippleDrawable` with a light-mode black overlay (alpha `0x20`) or dark-mode white overlay (alpha `0x33`); no custom duration or easing is defined. Feed chips use Telegram's rounded native selector. Web hover/focus behavior in sidecar examples is solely for documentation preview interaction.
 
 ## Shapes
 
-Soft rectangular surfaces recur across buttons, search and cards. Photos have a slightly tighter radius, destination icon grounds sit between photo and surface radii, and selected chips form capsules. Dividers are a single (1dp) line. Cards and the search field have no explicit outline stroke.
+Custom content uses softly rounded rectangles. Shared buttons and the lead card use the surface radius; media previews use the tighter photo radius; selected filters use capsule ends; channel grounds are circles. Compact story separators are (1dp). Spaces uses (50dp) circular peer avatars rather than generic media illustrations.
 
-Custom glyphs are drawn with native Canvas paths using rounded caps and joins and a (1.8) stroke in a (48 × 48) drawing coordinate space, then scaled to the view. The ASGRAM mark uses a rounded green tile with a white letterform. Preserve the supplied Abdii Sabaa logo's aspect ratio with `FIT_CENTER`; do not redraw it as a generic media symbol.
+Canvas glyphs use rounded stroke caps/joins, a (1.8) stroke in a (48 × 48) drawing space, then native scaling to the view. The supplied publisher logo uses `FIT_CENTER`. It is an identity asset, not a replacement for the selected theme's action color.
 
 ## Components
 
 ### Buttons
 
-Confident filled actions and quiet tonal alternatives share the same shape and spacing. Use `button-primary` for the leading action and `button-secondary` for supporting destinations or preferences. Both use centered bold title text, a minimum (52dp) height, and the frontmatter padding and radius. Dark mode swaps to the paired palette roles.
-
-The native helper applies `RippleDrawable` feedback with a black overlay in light mode (alpha `0x20`) and white in dark mode (alpha `0x33`). It does not define web hover animation, a custom focus ring, or a disabled/error variant. Preserve native accessibility and interaction semantics when extending it.
+Primary and tonal buttons are direct, legible native controls. Both use bold title text, centered content, the shared surface radius and (14dp) vertical / (20dp) horizontal padding. Primary uses `primary` with calculated `inverse`; tonal uses `tint` with `primary`. Native ripple feedback comes from the current light/dark mode. No global custom disabled/error styling has been extracted; per-action text such as **Joining…** explains the local state.
 
 ### Chips
 
-The category selector is a horizontal row with (48dp) targets, (17dp) horizontal padding and (5dp) gaps. Selected chips use primary/inverse colors, bold action text and a capsule background. Unselected chips use normal (14sp) secondary text on the screen ground. Selection is exposed through `setSelected`; the saved view clears category-selection presentation.
+Feed filters use (48dp) height and (18dp) horizontal padding. Selected filters have a `primary` fill, `inverse` text and bold action typography. Unselected filters use secondary normal text on a transparent ground. Native rounded selectors use `tint` feedback. Spaces reuses the capsule/selected-color language with its own (16dp) horizontal padding and All, Private, Groups, Channels and Bots choices. Selection is exposed with native selected state.
 
 ### Cards / Containers
 
-Story cards are flat surface rectangles with the frontmatter shape and padding. The first row pairs a primary-colored source name with a secondary timestamp. Optional real public-channel photography uses rounded clipping; otherwise the area can offer **Load photo**. The heading, excerpt and bottom reading/save/share actions form distinct rows. Save state is conveyed by **Save** / **Saved** wording, without a fabricated counter.
+The lead story has a surfaced, rounded outer container. Text receives (16dp) inset; metadata precedes the heading, and an optional excerpt follows with separate spacing. The excerpt is limited to two lines and shown only when the lead heading is shorter than (130) characters and a body exists. This compact preview rule does not truncate the full native reader.
 
-The native reader expands the full heading and selectable body. Preview truncation is not a full-article rule. Its primary action opens the original Telegram post and its tonal action toggles the local save state.
+Following stories use compact text/media rows on the screen ground instead of repeating elevated cards. Titles are limited to three preview lines. Each story has native read/open, save and share actions. Wording adapts to **Read story**, **Open video** or **Open post · N items**; **Save** / **Saved** conveys local save state. Real timestamps and source names provide provenance without invented engagement numbers.
 
 ### Inputs / Fields
 
-Search is a single-line native `EditText` inside a surface container. Its leading search glyph occupies (48dp); the field uses (15sp) text, primary reading color, a secondary hint and (12dp) trailing padding. It filters displayed public news and education as text changes. No custom error, border or focus transition is implemented; retain the Android cursor, keyboard and text-entry behavior.
+Feed and Spaces use Telegram action-bar search fields, including native text entry, cursor, keyboard and search-field expansion. Feed search filters media text/author; Spaces search filters existing dialog titles. There is no separate rounded ASGRAM search box in the current Feed. Link input and creation choices use native dialogs.
 
 ### Navigation
 
-The hub bottom navigation has four equal-width native columns: Chats, Home, Saved and Settings. Each combines a glyph with a small label. A selected Home or Saved item uses primary color, bold label and a tint capsule behind a (56 × 32dp) icon area; inactive items use secondary color. The row sits on `surface`. The Telegram action bar supplies Back and refresh. Other Telegram messaging surfaces retain their inherited navigation patterns.
+`MainTabsActivity` owns the persistent five-position navigation. Feed uses the article glyph, Chats the native chat glyph, Spaces the native gallery glyph, Settings/Calls their native alternatives, and You the actual account avatar. Selected/animated states and unread indicators remain native. Root tabs use theme surfaces, native icons and labels; do not reconstruct them as the earlier Home/Saved toolbar.
 
-### Destination Rows and Identity
+Spaces is a native directory over the account's existing private/secret chats, groups, channels and bots, with actual peer avatars, names, kinds and unread counts. Its Create action opens native choices; it does not create server folders merely by filtering. Contacts remains an explicit action within Spaces.
 
-Welcome destinations are compact horizontal rows. Each begins with a (48dp) icon ground, followed by a bold title and smaller secondary description with a (16dp) separation from the icon. Row padding is (10dp) vertically. The client mark and wordmark establish ASGRAM; the media logo identifies Abdii Sabaa. Keep these identities distinct from Telegram's official mark.
+### Channel Rail and Invitation
+
+The rail pairs the real Abdii Sabaa logo with native University, Sports and Community glyphs, each with a readable label. Opening a destination and subscribing are separate actions. The optional dismissible publisher invitation presents an explicit **Join Abdii Sabaa** and **Not now** choice; a joining state disables repeat taps. Additional official destinations are sourced through the explicit `ASGRAM:` directory line and verification, not inferred from advert links.
+
+### Media and Albums
+
+`BackupImageView` loads real Telegram media. Data saving can replace a preview with a **Load photo** action. A multi-item post remains one Feed story, with an item-count overlay and **Tap to expand** wording. Tapping available native media opens Telegram's `PhotoViewer` with the photo/video album items, retaining its swipe, thumbnail, zoom, sharing and Back behavior. If native media is unavailable, the source Telegram link is the fallback.
+
+The reader keeps the full heading and selectable body separate. It offers native media expansion, the original Telegram post and a local save toggle. Do not apply the Feed's three-line heading cap to this reader or reproduce the album as separate fake Feed posts.
 
 ### Native Preferences
 
-Appearance uses a native dialog with device/light/dark choices. Data saving uses an Android switch with a text explanation. Notification preferences open the Android settings surface. Their native interaction, focus and dialog treatment are inherited, not a new ASGRAM component skin.
+Media settings opens `ThemeActivity(THEME_TYPE_BASIC)` for appearance. Android's switch controls automatic photo loading; Android notification preferences handle notification settings. Telegram's existing chat themes, messaging settings and account controls retain their native screens. There is no separate media-only appearance palette to keep in sync.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** use the paired native palette roles for complete light and dark screens.
-- **Do** keep Android `sp` text scaling, safe-area insets and at least (48dp) touch targets for custom main actions.
-- **Do** preserve the real media logo and real public-channel imagery with their aspect ratios.
-- **Do** keep heading, excerpt, metadata and actions visually distinct in a story card.
-- **Do** carry Telegram's native account and messaging conventions into inherited screens.
-- **Do** show loading, refresh failure, empty, saved and photo-loading states with readable native text.
+- **Do** resolve custom colors through the current Telegram theme and preserve the user's selected theme.
+- **Do** retain ASGRAM launcher/client artwork and the actual publisher logo without forcing their colors onto app surfaces.
+- **Do** keep native Android text scaling, safe-area insets and (48dp) main action targets.
+- **Do** distinguish lead story, compact following stories, metadata, body and actions through hierarchy and spacing.
+- **Do** preserve Latest chronology, explicit For you selection and a full-text native reader.
+- **Do** keep albums as one story and expand available items through native PhotoViewer.
+- **Do** make loading, partial failure, empty, saved and data-saving states visible in readable native text.
 
 ### Don't:
 
-- **Don't** replace native Android screens with web wrappers or treat the sidecar's HTML previews as application source.
-- **Don't** use the official Telegram logo as ASGRAM's client identity.
-- **Don't** invent a red UI accent, font pairing, shadow scale or animation timing that the custom source does not define.
-- **Don't** promote preview truncation, duplicate category navigation or accidental article whitespace into reusable system rules.
-- **Don't** treat public-feed rendering as evidence that account sign-in, messaging, calls or push notifications have passed runtime verification.
+- **Don't** restore fixed forest-green screen defaults or overwrite custom themes to match branding.
+- **Don't** replace the current five-position navigation with the obsolete Chats/Home/Saved/Settings row.
+- **Don't** treat a chosen Feed photo, preview line cap or source-image whitespace as a universal design token.
+- **Don't** invent engagement counts, silently subscribe accounts or infer official channels from personal/advert links.
+- **Don't** replace native Android production screens with the sidecar's illustrative HTML/CSS examples.
+- **Don't** describe the current internal build as fully verified or publicly released on the strength of screenshots or this design record.

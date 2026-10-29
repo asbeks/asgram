@@ -1,399 +1,169 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-28T19:44:10.819628+00:00",
+  "generatedAt": "2026-10-29T13:12:51.498192+00:00",
   "title": "Design System: ASGRAM",
   "extensions": {
-    "colorMeta": {
-      "primary": {
-        "role": "primary",
-        "displayName": "Forest Action",
-        "canonical": "#176b49",
-        "tonalRamp": [
-          "oklch(0.15 0.09555 161.05)",
-          "oklch(0.26 0.09555 161.05)",
-          "oklch(0.38 0.09555 161.05)",
-          "oklch(0.49 0.09555 161.05)",
-          "oklch(0.61 0.09555 161.05)",
-          "oklch(0.72 0.09555 161.05)",
-          "oklch(0.84 0.09555 161.05)",
-          "oklch(0.95 0.09555 161.05)"
-        ]
+    "nativeTheme": {
+      "source": "TMessagesProj/src/main/java/org/telegram/ui/asgram/AsgramUi.java:Palette",
+      "resolution": "Theme.getColor(Theme.key_<nativeKey>) at runtime. Fixed CSS color primitives are intentionally absent from DESIGN.md frontmatter.",
+      "bindings": {
+        "background": "Theme.key_windowBackgroundGray",
+        "surface": "Theme.key_windowBackgroundWhite",
+        "text": "Theme.key_windowBackgroundWhiteBlackText",
+        "secondary": "Theme.key_windowBackgroundWhiteGrayText2",
+        "primary": "Theme.key_windowBackgroundWhiteBlueText",
+        "tint": "Theme.key_groupcreate_spanBackground",
+        "outline": "Theme.key_divider"
       },
-      "background": {
-        "role": "neutral",
-        "displayName": "Pale Green Ground",
-        "canonical": "#f5f8f5",
-        "tonalRamp": [
-          "oklch(0.15 0.00506 145.54)",
-          "oklch(0.26 0.00506 145.54)",
-          "oklch(0.38 0.00506 145.54)",
-          "oklch(0.49 0.00506 145.54)",
-          "oklch(0.61 0.00506 145.54)",
-          "oklch(0.72 0.00506 145.54)",
-          "oklch(0.84 0.00506 145.54)",
-          "oklch(0.95 0.00506 145.54)"
-        ]
-      },
-      "surface": {
-        "role": "neutral",
-        "displayName": "White Surface",
-        "canonical": "#ffffff",
-        "tonalRamp": [
-          "oklch(0.15 0.00000 0.00)",
-          "oklch(0.26 0.00000 0.00)",
-          "oklch(0.38 0.00000 0.00)",
-          "oklch(0.49 0.00000 0.00)",
-          "oklch(0.61 0.00000 0.00)",
-          "oklch(0.72 0.00000 0.00)",
-          "oklch(0.84 0.00000 0.00)",
-          "oklch(0.95 0.00000 0.00)"
-        ]
-      },
-      "text": {
-        "role": "neutral",
-        "displayName": "Ink Green",
-        "canonical": "#13281c",
-        "tonalRamp": [
-          "oklch(0.15 0.03564 157.56)",
-          "oklch(0.26 0.03564 157.56)",
-          "oklch(0.38 0.03564 157.56)",
-          "oklch(0.49 0.03564 157.56)",
-          "oklch(0.61 0.03564 157.56)",
-          "oklch(0.72 0.03564 157.56)",
-          "oklch(0.84 0.03564 157.56)",
-          "oklch(0.95 0.03564 157.56)"
-        ]
-      },
-      "secondary": {
-        "role": "neutral",
-        "displayName": "Muted Green",
-        "canonical": "#52665a",
-        "tonalRamp": [
-          "oklch(0.15 0.03076 158.70)",
-          "oklch(0.26 0.03076 158.70)",
-          "oklch(0.38 0.03076 158.70)",
-          "oklch(0.49 0.03076 158.70)",
-          "oklch(0.61 0.03076 158.70)",
-          "oklch(0.72 0.03076 158.70)",
-          "oklch(0.84 0.03076 158.70)",
-          "oklch(0.95 0.03076 158.70)"
-        ]
-      },
-      "tint": {
-        "role": "primary",
-        "displayName": "Leaf Tint",
-        "canonical": "#e4f1e8",
-        "tonalRamp": [
-          "oklch(0.15 0.01823 155.81)",
-          "oklch(0.26 0.01823 155.81)",
-          "oklch(0.38 0.01823 155.81)",
-          "oklch(0.49 0.01823 155.81)",
-          "oklch(0.61 0.01823 155.81)",
-          "oklch(0.72 0.01823 155.81)",
-          "oklch(0.84 0.01823 155.81)",
-          "oklch(0.95 0.01823 155.81)"
-        ]
-      },
-      "outline": {
-        "role": "neutral",
-        "displayName": "Leaf Divider",
-        "canonical": "#dce6dd",
-        "tonalRamp": [
-          "oklch(0.15 0.01611 148.40)",
-          "oklch(0.26 0.01611 148.40)",
-          "oklch(0.38 0.01611 148.40)",
-          "oklch(0.49 0.01611 148.40)",
-          "oklch(0.61 0.01611 148.40)",
-          "oklch(0.72 0.01611 148.40)",
-          "oklch(0.84 0.01611 148.40)",
-          "oklch(0.95 0.01611 148.40)"
-        ]
-      },
-      "inverse": {
-        "role": "neutral",
-        "displayName": "White on Forest",
-        "canonical": "#ffffff",
-        "tonalRamp": [
-          "oklch(0.15 0.00000 0.00)",
-          "oklch(0.26 0.00000 0.00)",
-          "oklch(0.38 0.00000 0.00)",
-          "oklch(0.49 0.00000 0.00)",
-          "oklch(0.61 0.00000 0.00)",
-          "oklch(0.72 0.00000 0.00)",
-          "oklch(0.84 0.00000 0.00)",
-          "oklch(0.95 0.00000 0.00)"
-        ]
-      },
-      "primary-dark": {
-        "role": "primary",
-        "displayName": "Mint Action",
-        "canonical": "#9bd7b6",
-        "tonalRamp": [
-          "oklch(0.15 0.07709 160.06)",
-          "oklch(0.26 0.07709 160.06)",
-          "oklch(0.38 0.07709 160.06)",
-          "oklch(0.49 0.07709 160.06)",
-          "oklch(0.61 0.07709 160.06)",
-          "oklch(0.72 0.07709 160.06)",
-          "oklch(0.84 0.07709 160.06)",
-          "oklch(0.95 0.07709 160.06)"
-        ]
-      },
-      "background-dark": {
-        "role": "neutral",
-        "displayName": "Night Green Ground",
-        "canonical": "#111814",
-        "tonalRamp": [
-          "oklch(0.15 0.01320 159.89)",
-          "oklch(0.26 0.01320 159.89)",
-          "oklch(0.38 0.01320 159.89)",
-          "oklch(0.49 0.01320 159.89)",
-          "oklch(0.61 0.01320 159.89)",
-          "oklch(0.72 0.01320 159.89)",
-          "oklch(0.84 0.01320 159.89)",
-          "oklch(0.95 0.01320 159.89)"
-        ]
-      },
-      "surface-dark": {
-        "role": "neutral",
-        "displayName": "Raised Night Green",
-        "canonical": "#19231d",
-        "tonalRamp": [
-          "oklch(0.15 0.01821 158.39)",
-          "oklch(0.26 0.01821 158.39)",
-          "oklch(0.38 0.01821 158.39)",
-          "oklch(0.49 0.01821 158.39)",
-          "oklch(0.61 0.01821 158.39)",
-          "oklch(0.72 0.01821 158.39)",
-          "oklch(0.84 0.01821 158.39)",
-          "oklch(0.95 0.01821 158.39)"
-        ]
-      },
-      "text-dark": {
-        "role": "neutral",
-        "displayName": "Pale Reading Green",
-        "canonical": "#ecf3ed",
-        "tonalRamp": [
-          "oklch(0.15 0.01086 149.86)",
-          "oklch(0.26 0.01086 149.86)",
-          "oklch(0.38 0.01086 149.86)",
-          "oklch(0.49 0.01086 149.86)",
-          "oklch(0.61 0.01086 149.86)",
-          "oklch(0.72 0.01086 149.86)",
-          "oklch(0.84 0.01086 149.86)",
-          "oklch(0.95 0.01086 149.86)"
-        ]
-      },
-      "secondary-dark": {
-        "role": "neutral",
-        "displayName": "Muted Pale Green",
-        "canonical": "#b4c5b9",
-        "tonalRamp": [
-          "oklch(0.15 0.02495 155.03)",
-          "oklch(0.26 0.02495 155.03)",
-          "oklch(0.38 0.02495 155.03)",
-          "oklch(0.49 0.02495 155.03)",
-          "oklch(0.61 0.02495 155.03)",
-          "oklch(0.72 0.02495 155.03)",
-          "oklch(0.84 0.02495 155.03)",
-          "oklch(0.95 0.02495 155.03)"
-        ]
-      },
-      "tint-dark": {
-        "role": "primary",
-        "displayName": "Deep Leaf Tint",
-        "canonical": "#253f30",
-        "tonalRamp": [
-          "oklch(0.15 0.04172 157.95)",
-          "oklch(0.26 0.04172 157.95)",
-          "oklch(0.38 0.04172 157.95)",
-          "oklch(0.49 0.04172 157.95)",
-          "oklch(0.61 0.04172 157.95)",
-          "oklch(0.72 0.04172 157.95)",
-          "oklch(0.84 0.04172 157.95)",
-          "oklch(0.95 0.04172 157.95)"
-        ]
-      },
-      "outline-dark": {
-        "role": "neutral",
-        "displayName": "Night Divider",
-        "canonical": "#34483b",
-        "tonalRamp": [
-          "oklch(0.15 0.03351 155.97)",
-          "oklch(0.26 0.03351 155.97)",
-          "oklch(0.38 0.03351 155.97)",
-          "oklch(0.49 0.03351 155.97)",
-          "oklch(0.61 0.03351 155.97)",
-          "oklch(0.72 0.03351 155.97)",
-          "oklch(0.84 0.03351 155.97)",
-          "oklch(0.95 0.03351 155.97)"
-        ]
-      },
-      "inverse-dark": {
-        "role": "neutral",
-        "displayName": "Deep Green on Mint",
-        "canonical": "#143422",
-        "tonalRamp": [
-          "oklch(0.15 0.05053 156.66)",
-          "oklch(0.26 0.05053 156.66)",
-          "oklch(0.38 0.05053 156.66)",
-          "oklch(0.49 0.05053 156.66)",
-          "oklch(0.61 0.05053 156.66)",
-          "oklch(0.72 0.05053 156.66)",
-          "oklch(0.84 0.05053 156.66)",
-          "oklch(0.95 0.05053 156.66)"
-        ]
-      }
+      "inverse": "Color.WHITE when ColorUtils.calculateContrast(Color.WHITE, primary) >= 4.5; otherwise 0xff111111.",
+      "dark": "Theme.isCurrentThemeDark()",
+      "appearance": "ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)",
+      "migration": "Only prior ASGRAM / ASGRAM Night defaults migrate to Day / Dark Blue. Preserve user-selected and custom themes.",
+      "previewSource": "TMessagesProj/src/main/assets/darkblue.attheme; base asset snapshot before runtime accent overrides. HTML examples are illustrative density-1 translations, never native production source."
     },
     "typographyMeta": {
-      "section": {
-        "displayName": "Section",
-        "purpose": "Recurring feed and settings section headings."
-      },
       "title": {
         "displayName": "Title",
-        "purpose": "Destination names, settings labels and shared buttons."
+        "purpose": "Shared buttons, destination/action labels and Spaces names."
       },
       "reading": {
         "displayName": "Reading",
-        "purpose": "Welcome description and full article body; Android sp scaling applies."
+        "purpose": "Selectable full article body with native Android scaling and 7dp added line spacing."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Excerpts, explanation and privacy information."
+        "purpose": "Excerpts and explanatory copy."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Source names, descriptions and save actions; weight varies by function."
+        "purpose": "Source/save and supporting settings information; weight follows function."
       },
       "caption": {
         "displayName": "Caption",
-        "purpose": "Status, disclosures and build information."
+        "purpose": "Status, source metadata, channel labels and disclosure information; weight follows function."
       },
       "action": {
         "displayName": "Action",
-        "purpose": "Read actions and selected category labels."
+        "purpose": "Reading actions and selected category labels."
+      },
+      "section": {
+        "displayName": "Section",
+        "purpose": "Media settings section headings."
       }
     },
     "shadows": [],
     "motion": [
       {
         "name": "native-button-ripple",
-        "value": "Android RippleDrawable; light overlay #20000000, dark overlay #33ffffff",
-        "purpose": "Native touch feedback on shared filled and tonal buttons. The implementation sets no custom duration or easing."
+        "value": "Android RippleDrawable: light overlay 0x20000000; dark overlay 0x33ffffff",
+        "purpose": "Shared filled/tonal button touch feedback; no custom duration/easing is defined."
       }
     ],
-    "breakpoints": [],
-    "nativeClient": {
-      "status": "implemented; authenticated runtime verification pending",
-      "welcome": "native IntroActivity",
-      "themes": [
-        "asgram.attheme",
-        "asgram-night.attheme"
-      ],
-      "identity": "ASGRAM A; no Telegram onboarding logo",
-      "community": "optional channel invitation and shortcut; no automatic join",
-      "updatedAt": "2026-10-29"
-    }
+    "breakpoints": []
   },
   "components": [
     {
-      "name": "Filled native action",
+      "name": "Native filled action",
       "kind": "button",
-      "refersTo": "button-primary",
-      "description": "Density-1 HTML visual translation of the Android filled button. Hover/focus are panel affordances; Android uses RippleDrawable.",
-      "html": "<button class=\"ds-primary\">Continue with Telegram</button>",
-      "css": ".ds-primary { font:700 16px sans-serif; color:#fff; background:#176b49; border:0; border-radius:16px; padding:14px 20px; min-height:52px; width:100%; cursor:pointer; } .ds-primary:hover,.ds-primary:active { background:linear-gradient(#00000020,#00000020),#176b49; } .ds-primary:focus-visible { outline:2px solid #176b49; outline-offset:3px; }"
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
+      "html": "<button class=\"ds-action-primary\">Open original in Telegram</button>",
+      "css": ".ds-action-primary { color:#111111; background:#64b5ef; font:700 16px sans-serif; min-height:52px; border:0; border-radius:16px; padding:14px 20px; cursor:pointer; } .ds-action-primary:hover,.ds-action-primary:active { background:linear-gradient(#ffffff33,#ffffff33),#64b5ef; } .ds-action-primary:focus-visible { outline:2px solid #64b5ef; outline-offset:3px; }",
+      "refersTo": "button-primary"
     },
     {
-      "name": "Tonal native action",
+      "name": "Native tonal action",
       "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Density-1 visual translation of the shared Android tonal button; preview focus is not a new native token.",
-      "html": "<button class=\"ds-secondary\">Explore Abdii Sabaa</button>",
-      "css": ".ds-secondary { font:700 16px sans-serif; color:#176b49; background:#e4f1e8; border:0; border-radius:16px; padding:14px 20px; min-height:52px; width:100%; cursor:pointer; } .ds-secondary:hover,.ds-secondary:active { background:linear-gradient(#00000020,#00000020),#e4f1e8; } .ds-secondary:focus-visible { outline:2px solid #176b49; outline-offset:3px; }"
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
+      "html": "<button class=\"ds-action-tonal\">Chat themes &amp; appearance</button>",
+      "css": ".ds-action-tonal { color:#64b5ef; background:#2c3c4e; font:700 16px sans-serif; min-height:52px; border:0; border-radius:16px; padding:14px 20px; cursor:pointer; } .ds-action-tonal:hover,.ds-action-tonal:active { background:linear-gradient(#ffffff33,#ffffff33),#2c3c4e; } .ds-action-tonal:focus-visible { outline:2px solid #64b5ef; outline-offset:3px; }",
+      "refersTo": "button-secondary"
     },
     {
-      "name": "Dark filled action",
-      "kind": "button",
-      "refersTo": "button-primary-dark",
-      "description": "Dark palette counterpart of the shared filled button. CSS interactive treatment previews the white native ripple.",
-      "html": "<button class=\"ds-dark-primary\">Open original in Telegram</button>",
-      "css": ".ds-dark-primary { font:700 16px sans-serif; color:#143422; background:#9bd7b6; border:0; border-radius:16px; padding:14px 20px; min-height:52px; cursor:pointer; width:100%; } .ds-dark-primary:hover,.ds-dark-primary:active { background:linear-gradient(#ffffff33,#ffffff33),#9bd7b6; } .ds-dark-primary:focus-visible { outline:2px solid #9bd7b6; outline-offset:3px; }"
-    },
-    {
-      "name": "Public update search",
-      "kind": "input",
-      "refersTo": "search",
-      "description": "Density-1 visual translation of the native single-line EditText and Canvas search glyph. Browser focus styling is preview-only.",
-      "html": "<label class=\"ds-search\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"#52665a\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"22\" cy=\"22\" r=\"7\"/><path d=\"M27 27 33 33\"/></g></svg><input class=\"ds-search-input\" type=\"search\" aria-label=\"Search public Abdii Sabaa updates\" placeholder=\"Search news and education\" /></label>",
-      "css": ".ds-search { display:flex; align-items:center; min-height:52px; border-radius:16px; background:#fff; color:#13281c; } .ds-search-input { font:400 15px sans-serif; color:#13281c; border:0; background:transparent; min-width:0; width:100%; height:52px; padding:0 12px 0 0; } .ds-search-input::placeholder { color:#52665a; } .ds-search:hover { background:#fff; } .ds-search:focus-within { outline:2px solid #176b49; outline-offset:2px; } .ds-search-input:focus-visible { outline:none; }"
-    },
-    {
-      "name": "Category chips",
+      "name": "Feed topic row",
       "kind": "chip",
-      "refersTo": "chip-selected",
-      "description": "Selected and unselected states from the native horizontally scrolling category row. Panel hover/focus do not define new native behavior.",
-      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-selected\" aria-pressed=\"true\">All</button><button class=\"ds-chip\" aria-pressed=\"false\">News</button><button class=\"ds-chip\" aria-pressed=\"false\">Education</button><button class=\"ds-chip\" aria-pressed=\"false\">Sports</button></div>",
-      "css": ".ds-chips { display:flex; gap:5px; overflow-x:auto; background:#f5f8f5; padding:3px; } .ds-chip { border:0; border-radius:24px; min-height:48px; padding:0 17px; background:transparent; color:#52665a; font:400 14px sans-serif; cursor:pointer; } .ds-chip-selected { background:#176b49; color:#fff; font-weight:700; } .ds-chip:hover { background:#e4f1e8; color:#176b49; } .ds-chip-selected:hover { background:#176b49; color:#fff; } .ds-chip:focus-visible { outline:2px solid #176b49; outline-offset:1px; }"
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
+      "html": "<div class=\"ds-topics\"><button class=\"ds-topic ds-topic-selected\" aria-pressed=\"true\">Latest</button><button class=\"ds-topic\" aria-pressed=\"false\">For you</button><button class=\"ds-topic\" aria-pressed=\"false\">News</button><button class=\"ds-topic\" aria-pressed=\"false\">Learning</button><button class=\"ds-topic\" aria-pressed=\"false\">Sports</button></div>",
+      "css": ".ds-topics { display:flex; overflow-x:auto; background:#151e27; padding:4px; } .ds-topic { flex-shrink:0; height:48px; border:0; border-radius:24px; padding:0 18px; font:400 14px sans-serif; color:#f1fdff6f; background:transparent; cursor:pointer; } .ds-topic-selected { color:#111111; background:#64b5ef; font-weight:700; } .ds-topic:hover,.ds-topic:active { background:#2c3c4e; } .ds-topic:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }",
+      "refersTo": "feed-chip"
     },
     {
-      "name": "Native story card",
+      "name": "Native action-bar search",
+      "kind": "input",
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. The icon and browser field are representative; actual search is Telegram ActionBarMenuItem with native expansion, metrics and keyboard.",
+      "html": "<label class=\"ds-search\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"22\" cy=\"22\" r=\"7\"/><path d=\"M27 27 33 33\"/></g></svg><input class=\"ds-search-input\" type=\"search\" aria-label=\"Search media updates\" placeholder=\"Search media updates\" /></label>",
+      "css": ".ds-search { display:flex; align-items:center; gap:12px; padding:0 16px; min-height:48px; color:#ffffff; background:#151e27; } .ds-search-input { background:transparent; border:0; color:#ffffff; font:400 16px sans-serif; min-width:0; width:100%; min-height:48px; } .ds-search-input::placeholder { color:#f1fdff6f; } .ds-search:hover { background:#151e27; } .ds-search:focus-within { outline:2px solid #64b5ef; outline-offset:2px; } .ds-search-input:focus-visible { outline:none; }"
+    },
+    {
+      "name": "Lead story",
       "kind": "card",
-      "refersTo": "article-card",
-      "description": "Text-only density-1 translation of the real optional-photo card. Example labels identify roles, not a fabricated news report. Android reader/save/share actions remain native.",
-      "html": "<article class=\"ds-card\"><div class=\"ds-card-meta\"><strong class=\"ds-source\">Source name</strong><span class=\"ds-time\">Timestamp</span></div><h3 class=\"ds-story-title\">Public story heading</h3><p class=\"ds-story-excerpt\">The public article excerpt appears here, separated from the full heading.</p><div class=\"ds-card-actions\"><button class=\"ds-read\">Read story \u2192</button><button class=\"ds-save\">Save</button><button class=\"ds-share\" aria-label=\"Share story\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"#52665a\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"16\" cy=\"24\" r=\"3\"/><circle cx=\"31\" cy=\"15\" r=\"3\"/><circle cx=\"31\" cy=\"33\" r=\"3\"/><path d=\"M19 22 28 16M19 26 28 32\"/></g></svg></button></div></article>",
-      "css": ".ds-card { background:#fff; color:#13281c; border-radius:16px; padding:16px 16px 6px; font-family:sans-serif; } .ds-card-meta { display:flex; align-items:center; gap:12px; margin-bottom:12px; } .ds-source { color:#176b49; font-size:13px; flex:1; } .ds-time { color:#52665a; font-size:11px; } .ds-story-title { margin:0; font-size:19px; font-weight:700; line-height:1.35; } .ds-story-excerpt { color:#52665a; font-size:14px; line-height:1.4; margin:8px 0; } .ds-card-actions { display:flex; align-items:center; height:48px; } .ds-read,.ds-save,.ds-share { background:transparent; border:0; min-height:48px; color:#176b49; cursor:pointer; } .ds-read { flex:1; text-align:left; padding:0; font:700 14px sans-serif; } .ds-save { padding:0 14px; font:700 13px sans-serif; } .ds-share { padding:0; width:48px; } .ds-read:hover,.ds-save:hover,.ds-share:hover { background:#e4f1e8; } .ds-read:focus-visible,.ds-save:focus-visible,.ds-share:focus-visible { outline:2px solid #176b49; outline-offset:1px; }"
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. The gray media label, generic story text and count demonstrate roles and state, not news content or an actual album. Full media opens native PhotoViewer.",
+      "html": "<article class=\"ds-lead\"><div class=\"ds-lead-media\">Real media preview<button class=\"ds-album\">▣ 5 · Tap to expand</button></div><div class=\"ds-lead-copy\"><p class=\"ds-lead-meta\">Source name · Timestamp</p><h3 class=\"ds-lead-title\">Public story heading</h3><p class=\"ds-lead-excerpt\">The actual public story excerpt appears here.</p><div class=\"ds-lead-actions\"><button class=\"ds-lead-read\">Open post · 5 items →</button><button class=\"ds-lead-save\">Save</button><button class=\"ds-lead-share\" aria-label=\"Share story\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"16\" cy=\"24\" r=\"3\"/><circle cx=\"31\" cy=\"15\" r=\"3\"/><circle cx=\"31\" cy=\"33\" r=\"3\"/><path d=\"M19 22 28 16M19 26 28 32\"/></g></svg></button></div></div></article>",
+      "css": ".ds-lead { border-radius:16px; background:#1d2733; color:#ffffff; font-family:sans-serif; } .ds-lead-media { position:relative; height:190px; display:flex; justify-content:center; align-items:center; border-radius:12px; background:#2c3c4e; color:#f1fdff6f; font-size:12px; } .ds-album { position:absolute; bottom:8px; right:8px; color:white; background:#111111bb; border:0; border-radius:12px; padding:6px 10px; font:700 12px sans-serif; cursor:pointer; } .ds-lead-copy { padding:16px 16px 0; } .ds-lead-meta { margin:0 0 9px; color:#64b5ef; font-size:12px; font-weight:700; } .ds-lead-title { margin:0; font-size:22px; font-weight:700; line-height:1.3; } .ds-lead-excerpt { margin:10px 0 0; font-size:14px; line-height:1.4; color:#f1fdff6f; } .ds-lead-actions { display:flex; align-items:center; min-height:48px; } .ds-lead-read,.ds-lead-save,.ds-lead-share { color:#64b5ef; border:0; background:transparent; min-height:48px; cursor:pointer; } .ds-lead-read { flex:1; padding:0; text-align:left; font:700 14px sans-serif; } .ds-lead-save { padding:0 12px; font:700 13px sans-serif; } .ds-lead-share { color:#f1fdff6f; width:48px; padding:0; } .ds-album:hover,.ds-lead-read:hover,.ds-lead-save:hover,.ds-lead-share:hover { background:#2c3c4e; } .ds-album:focus-visible,.ds-lead-read:focus-visible,.ds-lead-save:focus-visible,.ds-lead-share:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }",
+      "refersTo": "lead-card"
     },
     {
-      "name": "Hub bottom navigation",
+      "name": "Compact following story",
+      "kind": "card",
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. Text and media placeholders identify structure only. Production content comes from real posts.",
+      "html": "<article class=\"ds-compact\"><p class=\"ds-compact-meta\">Source name · Timestamp</p><div class=\"ds-compact-row\"><h3 class=\"ds-compact-title\">Public story heading</h3><button class=\"ds-compact-media\">Media</button></div><div class=\"ds-compact-actions\"><button class=\"ds-compact-read\">Read story →</button><button class=\"ds-compact-save\">Save</button></div></article>",
+      "css": ".ds-compact { background:#151e27; color:#ffffff; padding:12px 20px; font-family:sans-serif; border-bottom:1px solid #00000095; } .ds-compact-meta { color:#64b5ef; font-size:12px; font-weight:700; margin:0 0 9px; } .ds-compact-row { display:flex; align-items:flex-start; gap:14px; } .ds-compact-title { flex:1; font-size:18px; font-weight:700; margin:0; line-height:1.3; } .ds-compact-media { width:92px; height:92px; border:0; border-radius:12px; background:#2c3c4e; color:#f1fdff6f; cursor:pointer; } .ds-compact-actions { display:flex; } .ds-compact-read,.ds-compact-save { min-height:48px; background:transparent; border:0; color:#64b5ef; cursor:pointer; font:700 14px sans-serif; } .ds-compact-read { flex:1; text-align:left; padding:0; } .ds-compact-save { padding:0 12px; font-size:13px; } .ds-compact-media:hover,.ds-compact-read:hover,.ds-compact-save:hover { background:#2c3c4e; } .ds-compact-media:focus-visible,.ds-compact-read:focus-visible,.ds-compact-save:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }"
+    },
+    {
+      "name": "Five-position native navigation",
       "kind": "nav",
-      "description": "Density-1 translation of four native equal-width items. Inline SVG paths reproduce the native Canvas glyph geometry. Browser focus is panel-only.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"ASGRAM hub\"><button class=\"ds-nav-item\"><span class=\"ds-nav-glyph\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"12\" y=\"14\" width=\"24\" height=\"17\" rx=\"6\"/><path d=\"M17 31v5l6-5\"/></g></svg></span><span>Chats</span></button><button class=\"ds-nav-item ds-nav-selected\" aria-current=\"page\"><span class=\"ds-nav-glyph\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 23 12-10 12 10\"/><rect x=\"16\" y=\"22\" width=\"16\" height=\"13\" rx=\"2\"/></g></svg></span><span>Home</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-glyph\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 14h14v20l-7-5-7 5Z\"/></g></svg></span><span>Saved</span></button><button class=\"ds-nav-item\"><span class=\"ds-nav-glyph\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"24\" cy=\"24\" r=\"7\"/><path d=\"M34.00 24.00 37.00 24.00\"/><path d=\"M31.07 31.07 33.19 33.19\"/><path d=\"M24.00 34.00 24.00 37.00\"/><path d=\"M16.93 31.07 14.81 33.19\"/><path d=\"M14.00 24.00 11.00 24.00\"/><path d=\"M16.93 16.93 14.81 14.81\"/><path d=\"M24.00 14.00 24.00 11.00\"/><path d=\"M31.07 16.93 33.19 14.81\"/></g></svg></span><span>Settings</span></button></nav>",
-      "css": ".ds-nav { display:flex; background:#fff; padding:7px 8px 8px; font-family:sans-serif; } .ds-nav-item { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:56px; padding:2px 0 4px; border:0; background:transparent; color:#52665a; font:400 11px sans-serif; cursor:pointer; } .ds-nav-glyph { display:flex; align-items:center; justify-content:center; width:56px; height:32px; border-radius:16px; } .ds-nav-selected { color:#176b49; font-weight:700; } .ds-nav-selected .ds-nav-glyph { background:#e4f1e8; } .ds-nav-item:hover .ds-nav-glyph { background:#e4f1e8; } .ds-nav-item:focus-visible { outline:2px solid #176b49; outline-offset:-2px; }"
+      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. Static illustrative glyphs represent the native animated GlassTabView icons; the You circle is a placeholder for the real account avatar. Settings and Calls share the fourth position.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"ASGRAM roots\"><button class=\"ds-nav-tab ds-nav-current\" aria-current=\"page\"><span class=\"ds-nav-icon\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"14\" y=\"13\" width=\"20\" height=\"22\" rx=\"3\"/><path d=\"M19 19h10M19 24h10M19 29h7\"/></g></svg></span><span>Feed</span></button><button class=\"ds-nav-tab\"><span class=\"ds-nav-icon\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"12\" y=\"14\" width=\"24\" height=\"17\" rx=\"6\"/><path d=\"M17 31v5l6-5\"/></g></svg></span><span>Chats</span></button><button class=\"ds-nav-tab\"><span class=\"ds-nav-icon\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"12\" y=\"12\" width=\"24\" height=\"24\" rx=\"4\"/><circle cx=\"20\" cy=\"20\" r=\"2\"/><path d=\"m13 32 8-8 5 4 5-5 5 5\"/></g></svg></span><span>Spaces</span></button><button class=\"ds-nav-tab\"><span class=\"ds-nav-icon\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"24\" cy=\"24\" r=\"7\"/><path d=\"M24 11v4m0 18v4M11 24h4m18 0h4M15 15l3 3m12 12 3 3m0-18-3 3M18 30l-3 3\"/></g></svg></span><span>Settings</span></button><button class=\"ds-nav-tab\"><span class=\"ds-avatar\">You</span><span>You</span></button></nav>",
+      "css": ".ds-nav { display:flex; max-width:408px; padding:8px; border-radius:24px; background:#1d2733; font-family:sans-serif; } .ds-nav-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:56px; border:0; background:transparent; color:#ffffff; font:400 11px sans-serif; cursor:pointer; } .ds-nav-icon { display:flex; align-items:center; justify-content:center; width:44px; height:32px; border-radius:16px; } .ds-nav-current { color:#64b5ef; } .ds-nav-current .ds-nav-icon { background:#2c3c4e; } .ds-avatar { display:flex; align-items:center; justify-content:center; height:26px; width:26px; border-radius:50%; background:#2c3c4e; color:#64b5ef; font-size:8px; } .ds-nav-tab:hover .ds-nav-icon,.ds-nav-tab:hover .ds-avatar { background:#2c3c4e; } .ds-nav-tab:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }"
     }
   ],
   "narrative": {
-    "northStar": "The Compact Native Destination Directory",
-    "overview": "The native ASGRAM client uses the welcome and paired themes described in DESIGN.md, then standard native Telegram sign-in and messaging. The component previews below document the archived media-hub experiment only; that hub has no active entry. Authenticated messaging and closed-app push still require runtime verification.",
+    "northStar": "The Native Media Front Desk",
+    "overview": "ASGRAM puts the Abdii Sabaa network and real public stories at the front of a native Telegram client. A channel rail, clear topic selection and a prominent first story make the Feed easy to scan. Chats remain one tap away. The publisher's supplied logo, ASGRAM naming and client artwork carry the identity; the selected Telegram theme supplies interface colors.\n\nThis is the current internal Android design record, derived from `AsgramHubActivity.java`, `AsgramSpacesActivity.java`, `AsgramUi.java`, `MainTabsActivity.java` and native theme sources. The Feed is active and first in root navigation. It supersedes the archived-directory guidance and fixed forest palette recorded previously. The app remains native Android Java, with Telegram's existing account, messaging, theme controls and media viewer. This document records implemented design, not full feature verification or release status.",
     "keyCharacteristics": [
-      "Compact destination rows and vertically stacked public story cards.",
-      "Forest-green actions with tonal surfaces in paired light and dark palettes.",
-      "Android system sans, scaled text and familiar Back, dialog, switch and keyboard behavior.",
-      "Flat resting surfaces, native ripple feedback on filled and tonal buttons.",
-      "Real media identity and public channel imagery, with user-controlled photo loading."
+      "A media-first Feed with a real publisher/channel rail and a lead story followed by compact stories.",
+      "User-selected Telegram theme roles shared across Feed, Spaces and inherited screens.",
+      "Android system sans, scaled text, native navigation, dialogs, keyboard and touch feedback.",
+      "Flat custom story surfaces alongside inherited Telegram navigation and full-screen media behavior.",
+      "Visible loading, cached, failure, empty, saved, photo-loading and album-count states."
     ],
     "rules": [
       {
-        "name": "The Paired Palette Rule",
-        "body": "Choose every screen color through the current `Palette`; change background, surface, reading, secondary and action roles together when appearance changes.",
+        "name": "The Selected Theme Rule",
+        "body": "Resolve custom screen colors through `AsgramUi.Palette` and the current native `Theme`; do not freeze ASGRAM's former forest colors into new surfaces.",
         "section": "colors"
       },
       {
         "name": "The Native Type Rule",
-        "body": "Express text sizes in `sp` and preserve Android font scaling; use font weight and size to establish hierarchy before adding decoration.",
+        "body": "Preserve Android font scaling and native type metrics; use size, weight and spacing to distinguish title, metadata and body.",
         "section": "typography"
       },
       {
-        "name": "The Tonal Depth Rule",
-        "body": "Separate custom resting surfaces through `background`, `surface` and `tint`; do not introduce a shadow ladder that the native custom screens do not use.",
+        "name": "The Chronology Rule",
+        "body": "Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Topic labels are Latest, For you, News, Learning and Sports; Learning maps to the Education category. Do not turn this Feed-specific ordering into a global navigation rule.",
+        "section": "layout"
+      },
+      {
+        "name": "The Native Depth Rule",
+        "body": "Keep custom story/list surfaces flat while preserving the inherited Telegram component's own depth and interaction behavior.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do use the paired native palette roles for complete light and dark screens.",
-      "Do keep Android `sp` text scaling, safe-area insets and at least (48dp) touch targets for custom main actions.",
-      "Do preserve the real media logo and real public-channel imagery with their aspect ratios.",
-      "Do keep heading, excerpt, metadata and actions visually distinct in a story card.",
-      "Do carry Telegram's native account and messaging conventions into inherited screens.",
-      "Do show loading, refresh failure, empty, saved and photo-loading states with readable native text."
+      "Do resolve custom colors through the current Telegram theme and preserve the user's selected theme.",
+      "Do retain ASGRAM launcher/client artwork and the actual publisher logo without forcing their colors onto app surfaces.",
+      "Do keep native Android text scaling, safe-area insets and (48dp) main action targets.",
+      "Do distinguish lead story, compact following stories, metadata, body and actions through hierarchy and spacing.",
+      "Do preserve Latest chronology, explicit For you selection and a full-text native reader.",
+      "Do keep albums as one story and expand available items through native PhotoViewer.",
+      "Do make loading, partial failure, empty, saved and data-saving states visible in readable native text."
     ],
     "donts": [
-      "Don't replace native Android screens with web wrappers or treat the sidecar's HTML previews as application source.",
-      "Don't use the official Telegram logo as ASGRAM's client identity.",
-      "Don't invent a red UI accent, font pairing, shadow scale or animation timing that the custom source does not define.",
-      "Don't promote preview truncation, duplicate category navigation or accidental article whitespace into reusable system rules.",
-      "Don't treat public-feed rendering as evidence that account sign-in, messaging, calls or push notifications have passed runtime verification."
+      "Don't restore fixed forest-green screen defaults or overwrite custom themes to match branding.",
+      "Don't replace the current five-position navigation with the obsolete Chats/Home/Saved/Settings row.",
+      "Don't treat a chosen Feed photo, preview line cap or source-image whitespace as a universal design token.",
+      "Don't invent engagement counts, silently subscribe accounts or infer official channels from personal/advert links.",
+      "Don't replace native Android production screens with the sidecar's illustrative HTML/CSS examples.",
+      "Don't describe the current internal build as fully verified or publicly released on the strength of screenshots or this design record."
     ]
   }
 }
