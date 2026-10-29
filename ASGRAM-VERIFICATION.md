@@ -22,3 +22,15 @@ Checked October 29, 2026. Native Telegram Android 13.1.1 fork, com.abdiisabaa.as
 - Premium purchases with birr are not available: the separate server service remains disabled pending a dedicated funded gift bot, real pricing and live fulfillment verification.
 
 Artifact checksums and current submission status are recorded in outputs/play/release-receipt.json. That directory is ignored; credentials are not published.
+
+## 29 October 2026 — production draft preparation
+
+- Final intended upload: ASGRAM 0.3.0, build 6, API 24 minimum / API 36 target, four ABIs.
+- Play rejected build 5 because automatic protection requires API 24. Build 6 raises the app minimum to Android 7 and retains automatic protection.
+- Release APK signature and 16 KB alignment checks passed. Final AAB/APK hashes are in outputs/play/release-receipt.json.
+- English listing, original icon, feature graphic and two native demo screenshots are saved. No personal chats, phone numbers or real media logos were used in listing screenshots.
+- Privacy, ads, IARC content rating, government, financial and health declarations are saved. Data safety answers are saved as a draft. Target audience and final Data safety are blocked until reviewer access is supplied.
+- A dedicated non-personal Telegram reviewer account is still required. Test DC calls confirmed test_mode=true but documented public test numbers/codes returned PHONE_CODE_INVALID. Telegram maintainer explains the restriction at https://github.com/tdlib/td/issues/3370 . The nonworking test-server option was removed from the release.
+- No public rollout or review submission has occurred. The owner chose preparation only until the reviewer account is available.
+- The existing authenticated debug app continued opening successfully after build 5; account data was preserved. The secondary emulator failed with SIGSEGV during boot. Build 6 debug installation ran out of emulator storage, so build 6 release runtime has not been proven on an emulator. Temporary storage-reserve settings were restored.
+- Background push remains unverified. The ETB Premium shop is disabled.
