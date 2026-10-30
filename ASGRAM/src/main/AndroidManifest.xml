@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+ <!-- The library manifest omits these; Telegram's application variants normally add them. -->
+ <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+ <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+ <uses-feature android:name="android.hardware.location" android:required="false"/>
+ <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+ <uses-feature android:name="android.hardware.location.network" android:required="false"/>
  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove"/>
  <application android:name="com.abdiisabaa.asgram.AsgramApplication"
   android:label="@string/AppName" android:icon="@drawable/asgram_launcher" android:roundIcon="@drawable/asgram_launcher"

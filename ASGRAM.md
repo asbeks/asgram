@@ -1,6 +1,6 @@
 # ASGRAM Android
 
-ASGRAM is an unofficial native Telegram app. Version 0.3.1 (7), package com.abdiisabaa.asgram, Android 7+.
+ASGRAM is an unofficial native Telegram app. Version 0.3.1 (8), package com.abdiisabaa.asgram, Android 7+.
 
 The native Java interface includes Feed, Chats, Spaces, Settings and You. Telegram handles sign-in, conversations, private groups, channels, bots and calls. Feed reads verified public channels, offers Latest and For you, topic filters, saved stories, full readers and complete native photo albums. Native Telegram light, dark and custom themes remain available. Channel invitations are optional and require a deliberate Join action; accounts are never silently subscribed.
 
@@ -15,6 +15,7 @@ The source is pinned to Telegram Android 13.1.1, commit 3de37c8. Matching offici
 5. Register com.abdiisabaa.asgram in your own Firebase project and put google-services.json in ASGRAM/. Configure Telegram application push delivery as documented at https://core.telegram.org/api/push-updates. Never reuse upstream Firebase credentials.
 6. For debug: `./gradlew :ASGRAM:assembleDebug :TMessagesProj:testDebugUnitTest --tests org.telegram.messenger.asgram.AsgramFeedTest`.
 7. For release, create a private upload keystore and ignored ASGRAM/keystore.properties with storeFile, storePassword, keyAlias and keyPassword. Run `./gradlew :ASGRAM:bundleRelease :ASGRAM:assembleRelease`.
+8. Check the actual merged release manifest: `python3 Tools/asgram/check_manifest.py ASGRAM/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml --release`. ASGRAM must explicitly declare foreground coarse/fine location permissions; Telegram's library manifest alone only contributes background location.
 
 On this Mac, JAVA_HOME is /Applications/Android Studio.app/Contents/jbr/Contents/Home. Signing keys, Telegram API credentials and Firebase configuration must not be committed. Release tasks fail closed when their configuration is missing.
 
