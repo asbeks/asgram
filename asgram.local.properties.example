@@ -1,3 +1,6 @@
 # Copy to asgram.local.properties and add your own registered Telegram app credentials.
 ASGRAM_API_ID=0
 ASGRAM_API_HASH=
+# Enable Maps SDK for Android. Restrict this key to that API, the ASGRAM package,
+# and debug, upload, and Google Play app-signing certificate SHA-1 fingerprints.
+ASGRAM_MAPS_API_KEY=

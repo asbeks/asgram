@@ -5,6 +5,7 @@
   android:label="@string/AppName" android:icon="@drawable/asgram_launcher" android:roundIcon="@drawable/asgram_launcher"
   android:allowBackup="false" android:fullBackupContent="false"
   tools:replace="android:name,android:allowBackup,android:label" tools:remove="android:backupAgent">
+  <meta-data android:name="com.google.android.geo.API_KEY" android:value="${asgramMapsApiKey}"/>
   <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true"/>
   <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false"/>
   <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false"/>

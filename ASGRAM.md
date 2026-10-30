@@ -1,6 +1,6 @@
 # ASGRAM Android
 
-ASGRAM is an unofficial native Telegram app. Version 0.3.0 (4), package com.abdiisabaa.asgram, Android 6+.
+ASGRAM is an unofficial native Telegram app. Version 0.3.1 (7), package com.abdiisabaa.asgram, Android 7+.
 
 The native Java interface includes Feed, Chats, Spaces, Settings and You. Telegram handles sign-in, conversations, private groups, channels, bots and calls. Feed reads verified public channels, offers Latest and For you, topic filters, saved stories, full readers and complete native photo albums. Native Telegram light, dark and custom themes remain available. Channel invitations are optional and require a deliberate Join action; accounts are never silently subscribed.
 
@@ -11,7 +11,7 @@ The source is pinned to Telegram Android 13.1.1, commit 3de37c8. Matching offici
 1. Install JDK 21, Android SDK 36 and build-tools 36.1.0.
 2. Initialize the Java submodules: `git submodule update --init --depth=1 TMessagesProj/lib/jlatexmath TMessagesProj_Modules/media`.
 3. Run `python3 Tools/asgram/prepare_native.py --apk /path/to/matching/Telegram.apk`.
-4. Set sdk.dir in ignored local.properties, and your own Telegram API ID/hash in ignored asgram.local.properties (see its example).
+4. Set sdk.dir in ignored local.properties, and your own Telegram API ID/hash in ignored asgram.local.properties (see its example). Configure ASGRAM_MAPS_API_KEY there, enable Maps SDK for Android in the key's project, and restrict it to that API and com.abdiisabaa.asgram with the debug, upload and Google Play app-signing certificate SHA-1 fingerprints. Packaging fails if the key is absent; the Maps SDK otherwise crashes asynchronously when opening location sharing. Enabling the API and any required Google account/billing verification must be completed separately from adding the key.
 5. Register com.abdiisabaa.asgram in your own Firebase project and put google-services.json in ASGRAM/. Configure Telegram application push delivery as documented at https://core.telegram.org/api/push-updates. Never reuse upstream Firebase credentials.
 6. For debug: `./gradlew :ASGRAM:assembleDebug :TMessagesProj:testDebugUnitTest --tests org.telegram.messenger.asgram.AsgramFeedTest`.
 7. For release, create a private upload keystore and ignored ASGRAM/keystore.properties with storeFile, storePassword, keyAlias and keyPassword. Run `./gradlew :ASGRAM:bundleRelease :ASGRAM:assembleRelease`.
