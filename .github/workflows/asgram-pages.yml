@@ -1,0 +1,43 @@
+name: Publish ASGRAM website
+
+on:
+  push:
+    branches: [codex/asgram-13.1]
+    paths:
+      - docs/**
+      - .github/workflows/asgram-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: asgram-website
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out website files only
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: false
+          persist-credentials: false
+          sparse-checkout: docs
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
