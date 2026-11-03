@@ -107,6 +107,7 @@ public class LocationController extends BaseController implements NotificationCe
 
         @Override
         public void onLocationChanged(Location location) {
+            if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) { stop(true); return; }
             if (location == null) {
                 return;
             }
@@ -140,6 +141,7 @@ public class LocationController extends BaseController implements NotificationCe
 
         @Override
         public void onLocationChanged(Location location) {
+            if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) { stop(true); return; }
             if (location == null) {
                 return;
             }
@@ -350,6 +352,7 @@ public class LocationController extends BaseController implements NotificationCe
     }
 
     private void broadcastLastKnownLocation(boolean cancelCurrent) {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
         if (lastKnownLocation == null) {
             return;
         }
@@ -523,6 +526,7 @@ public class LocationController extends BaseController implements NotificationCe
     }
 
     private void setLastKnownLocation(Location location) {
+        if (location != null && !org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
         if (location != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && (SystemClock.elapsedRealtimeNanos() - location.getElapsedRealtimeNanos()) / 1000000000 > 60 * 5) {
             return;
         }
@@ -747,6 +751,7 @@ public class LocationController extends BaseController implements NotificationCe
     }
 
     private void startService() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canStartLiveService()) return;
         try {
             if (PermissionRequest.hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) || PermissionRequest.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 ApplicationLoader.applicationContext.startService(new Intent(ApplicationLoader.applicationContext, LocationSharingService.class));
@@ -807,6 +812,7 @@ public class LocationController extends BaseController implements NotificationCe
     }
 
     private void start() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
         if (started) {
             return;
         }
@@ -868,7 +874,7 @@ public class LocationController extends BaseController implements NotificationCe
     }
 
     public Location getLastKnownLocation() {
-        return lastKnownLocation;
+        return org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation() ? lastKnownLocation : null;
     }
 
     public void loadLiveLocations(long did) {

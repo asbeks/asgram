@@ -792,8 +792,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         if (parentFragment == null || parentFragment.getParentActivity() == null) {
             return;
         }
-        if (Build.VERSION.SDK_INT >= 23 && parentFragment.getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            parentFragment.getParentActivity().requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+        if (Build.VERSION.SDK_INT >= 23 && (org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || parentFragment.getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+            org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(parentFragment.getParentActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
             return;
         }
         if (foundContextBot != null && foundContextBot.bot_inline_geo) {

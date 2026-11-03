@@ -76,10 +76,10 @@ public class IntroActivity extends BaseFragment {
         space(context,0,1);
         space(context,32,0);
         start = text(context,LocaleController.getString(R.string.StartMessaging),16,true); start.setGravity(Gravity.CENTER); start.setMinimumHeight(dp(56));
-        start.setOnClickListener(v -> { if (!starting) { starting=true; presentFragment(new LoginActivity()); } });
+        start.setOnClickListener(v -> { if (!starting) { org.telegram.ui.asgram.AsgramLocationDisclosure.showIntroduction(getParentActivity(), () -> { starting=true; presentFragment(new LoginActivity()); }); } });
         content.addView(start,new LinearLayout.LayoutParams(-1,dp(56)));
         space(context,16,0);
-        TextView disclosure = text(context,"An unofficial Telegram client\nby Abdii Sabaa Media.",12,false); disclosure.setTag("secondary"); disclosure.setGravity(Gravity.CENTER); disclosure.setLineSpacing(dp(3),1f);
+        TextView disclosure = text(context,"An unofficial Telegram client\nNot affiliated with Telegram.",12,false); disclosure.setTag("secondary"); disclosure.setGravity(Gravity.CENTER); disclosure.setLineSpacing(dp(3),1f);
         content.addView(disclosure,new LinearLayout.LayoutParams(-1,-2));
         updateColors(); return fragmentView;
     }

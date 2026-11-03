@@ -25,6 +25,8 @@ import com.google.android.gms.location.SettingsClient;
 public class GoogleLocationProvider implements ILocationServiceProvider {
     private FusedLocationProviderClient locationProviderClient;
     private SettingsClient settingsClient;
+    private final java.util.Map<ILocationListener, LocationCallback> callbacks =
+            java.util.Collections.synchronizedMap(new java.util.IdentityHashMap<>());
 
     @Override
     public void init(Context context) {
@@ -39,7 +41,9 @@ public class GoogleLocationProvider implements ILocationServiceProvider {
 
     @Override
     public void getLastLocation(Consumer<Location> callback) {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) { callback.accept(null); return; }
         locationProviderClient.getLastLocation().addOnCompleteListener(task -> {
+            if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) { callback.accept(null); return; }
             if (task.getException() != null) {
                 return;
             }
@@ -49,22 +53,27 @@ public class GoogleLocationProvider implements ILocationServiceProvider {
 
     @Override
     public void requestLocationUpdates(ILocationRequest request, ILocationListener locationListener) {
-        locationProviderClient.requestLocationUpdates(((GoogleLocationRequest) request).request, new LocationCallback() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
+        removeLocationUpdates(locationListener);
+        LocationCallback callback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
+                if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) {
+                    removeLocationUpdates(locationListener);
+                    return;
+                }
                 locationListener.onLocationChanged(locationResult.getLastLocation());
             }
-        }, Looper.getMainLooper());
+        };
+        callbacks.put(locationListener, callback);
+        locationProviderClient.requestLocationUpdates(((GoogleLocationRequest) request).request, callback, Looper.getMainLooper());
     }
 
     @Override
     public void removeLocationUpdates(ILocationListener locationListener) {
-        locationProviderClient.removeLocationUpdates(new LocationCallback() {
-            @Override
-            public void onLocationResult(@NonNull LocationResult locationResult) {
-                locationListener.onLocationChanged(locationResult.getLastLocation());
-            }
-        });
+        // FusedLocationProvider requires the same callback instance used at registration.
+        LocationCallback callback = callbacks.remove(locationListener);
+        if (callback != null) locationProviderClient.removeLocationUpdates(callback);
     }
 
     @Override

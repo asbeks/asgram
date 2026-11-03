@@ -679,6 +679,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             @Override
             public void onLocationChanged(Location location) {
+                if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) {
+                    stop();
+                    if (delegate != null) delegate.onUnableLocationAcquire();
+                    return;
+                }
                 if (location == null || locationQueryCancelRunnable == null) {
                     return;
                 }
@@ -733,6 +738,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
 
         public void start() {
+            if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) {
+                if (delegate != null) delegate.onUnableLocationAcquire();
+                return;
+            }
             if (locationManager == null) {
                 locationManager = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
             }
@@ -759,7 +768,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
             locationQueryCancelRunnable = () -> {
                 if (delegate != null) {
-                    if (lastKnownLocation != null) {
+                    if (lastKnownLocation != null && org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) {
                         delegate.onLocationAcquired(lastKnownLocation);
                     } else {
                         delegate.onUnableLocationAcquire();

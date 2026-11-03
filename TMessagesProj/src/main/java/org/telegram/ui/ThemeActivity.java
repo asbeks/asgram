@@ -268,6 +268,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
         @Override
         public void onLocationChanged(Location location) {
+            if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) { stopLocationUpdate(); return; }
             if (location == null) {
                 return;
             }
@@ -1687,8 +1688,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         if (Build.VERSION.SDK_INT >= 23) {
             Activity activity = getParentActivity();
             if (activity != null) {
-                if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+                if ((org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                    org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
                     return;
                 }
             }
@@ -1721,6 +1722,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 FileLog.e(e);
             }
         }
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
         try {
             lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (lastKnownLocation == null) {
@@ -1785,6 +1787,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     }
 
     private void startLocationUpdate() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return;
         if (updatingLocation) {
             return;
         }

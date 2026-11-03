@@ -482,7 +482,7 @@ public class Weather {
             new String[] { Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION },
             new String[] { Manifest.permission.ACCESS_COARSE_LOCATION }, granted -> {
 
-            if (!granted) {
+            if (!granted || !org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) {
                 whenGot.run(null);
                 return;
             }
@@ -528,7 +528,7 @@ public class Weather {
                                 listenerArr[0] = null;
                             }
                             if (callback[0] != null) {
-                                callback[0].run(location);
+                                callback[0].run(org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation() ? location : null);
                                 callback[0] = null;
                             }
                         };

@@ -130,7 +130,7 @@ public class GoogleMapsProvider implements IMapsProvider {
         @SuppressLint("MissingPermission")
         @Override
         public void setMyLocationEnabled(boolean enabled) {
-            googleMap.setMyLocationEnabled(enabled);
+            googleMap.setMyLocationEnabled(enabled && org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation());
         }
 
         @Override

@@ -52,6 +52,7 @@ public class LocationSharingService extends Service implements NotificationCente
     }
 
     public void onDestroy() {
+        org.telegram.ui.asgram.AsgramLocationDisclosure.setLiveServiceRunning(false);
         super.onDestroy();
         if (handler != null) {
             handler.removeCallbacks(runnable);
@@ -125,8 +126,9 @@ public class LocationSharingService extends Service implements NotificationCente
     }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (getInfos().isEmpty()) {
+        if (getInfos().isEmpty() || !org.telegram.ui.asgram.AsgramLocationDisclosure.canStartLiveService()) {
             stopSelf();
+            return Service.START_NOT_STICKY;
         }
         try {
             if (builder == null) {
@@ -148,7 +150,10 @@ public class LocationSharingService extends Service implements NotificationCente
 
             updateNotification(false);
             startForeground(6, builder.build());
+            org.telegram.ui.asgram.AsgramLocationDisclosure.setLiveServiceRunning(true);
         } catch (Throwable e) {
+            org.telegram.ui.asgram.AsgramLocationDisclosure.setLiveServiceRunning(false);
+            stopSelf();
             FileLog.e(e);
         }
         return Service.START_NOT_STICKY;

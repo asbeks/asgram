@@ -220,6 +220,7 @@ public class BotLocation {
     }
 
     private boolean appHasPermission() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent()) return false;
         final Activity activity = getActivity();
         return (
             Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
@@ -231,6 +232,7 @@ public class BotLocation {
     }
 
     private boolean needToOpenSettings() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent()) return false;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false;
         final Activity activity = getActivity();
         if (activity == null) return false;
@@ -361,7 +363,7 @@ public class BotLocation {
         if (whenDone == null) return;
 
         final JSONObject obj = new JSONObject();
-        final boolean available = granted && appHasPermission() && deviceHasLocation();
+        final boolean available = granted && appHasPermission() && deviceHasLocation() && org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation();
         if (!available) {
             try {
                 obj.put("available", false);
@@ -417,7 +419,7 @@ public class BotLocation {
                 @Override
                 public void onLocationChanged(@NonNull Location location) {
                     lm.removeUpdates(listener[0]);
-                    whenDone.run(locationObject(location));
+                    whenDone.run(locationObject(org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation() ? location : null));
                 }
             };
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0, listener[0]);

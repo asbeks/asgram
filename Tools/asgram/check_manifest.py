@@ -8,7 +8,8 @@ ANDROID = "{http://schemas.android.com/apk/res/android}"
 
 def check(path: Path, release: bool) -> None:
     root = ET.parse(path).getroot()
-    permissions = {item.get(ANDROID + "name") for item in root.findall("uses-permission")}
+    permissions = {item.get(ANDROID + "name") for tag in ("uses-permission", "uses-permission-sdk-23")
+                   for item in root.findall(tag)}
     required = {
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -28,8 +29,15 @@ def check(path: Path, release: bool) -> None:
         raise ValueError("ASGRAM account data must not be included in Android backups")
     services = {item.get(ANDROID + "name"): item for item in app.findall("service")}
     location_service = services.get("org.telegram.messenger.LocationSharingService")
-    if location_service is None or "location" not in location_service.get(ANDROID + "foregroundServiceType", "").split("|"):
+    service_type = "" if location_service is None else location_service.get(ANDROID + "foregroundServiceType", "")
+    # bundletool decodes this Android flags attribute as a hexadecimal bitmask.
+    has_location_type = "location" in service_type.split("|")
+    if service_type.startswith("0x"):
+        has_location_type = bool(int(service_type, 16) & 0x8)
+    if location_service is None or not has_location_type:
         raise ValueError("Missing foreground location service")
+    if "android.permission.ACCESS_BACKGROUND_LOCATION" in permissions:
+        raise ValueError("ASGRAM uses user-initiated foreground sharing, never all-the-time location")
     if release:
         if "android.permission.REQUEST_INSTALL_PACKAGES" in permissions:
             raise ValueError("The Play release must use Play updates")

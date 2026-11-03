@@ -7259,7 +7259,7 @@ public class AlertsCreator {
         builder.setMessage(replaceTags(LocaleController.getString(R.string.PermissionBackgroundLocation)));
         builder.setPositiveButton(LocaleController.getString(R.string.Continue), (dialog, which) -> {
             if (activity.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 30);
+                org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 30);
             }
         });
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), ((dialog, which) -> cancelRunnable.run()));

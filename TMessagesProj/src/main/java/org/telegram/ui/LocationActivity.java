@@ -559,7 +559,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             userLocation.setLatitude(messageObject.messageOwner.media.geo.lat);
             userLocation.setLongitude(messageObject.messageOwner.media.geo._long);
         }
-        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
+        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && (org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
 
         actionBar.setBackgroundColor(getThemedColor(Theme.key_dialogBackground));
         actionBar.setTitleColor(getThemedColor(Theme.key_dialogTextBlack));
@@ -800,7 +800,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             if (Build.VERSION.SDK_INT >= 23) {
                 Activity activity = getParentActivity();
                 if (activity != null) {
-                    if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if (!org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent()) {
+                        org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+                        return;
+                    }
+                    if ((org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                         showPermissionAlert(false);
                         return;
                     }
@@ -1785,10 +1789,18 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     }
 
     private void openShareLiveLocation(boolean expand, int proximityRadius) {
+        openShareLiveLocation(expand, proximityRadius, false);
+    }
+
+    private void openShareLiveLocation(boolean expand, int proximityRadius, boolean disclosed) {
         if (delegate == null || disablePermissionCheck() || getParentActivity() == null || myLocation == null || !checkGpsEnabled()) {
             return;
         }
-        if (checkBackgroundPermission && Build.VERSION.SDK_INT >= 29) {
+        if (org.telegram.ui.asgram.AsgramLocationDisclosure.isAsgram() && !disclosed) {
+            org.telegram.ui.asgram.AsgramLocationDisclosure.showLiveConsent(getParentActivity(), () -> openShareLiveLocation(expand, proximityRadius, true));
+            return;
+        }
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.isAsgram() && checkBackgroundPermission && Build.VERSION.SDK_INT >= 29) {
             Activity activity = getParentActivity();
             if (activity != null) {
                 askWithRadius = proximityRadius;
@@ -2481,6 +2493,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
     @SuppressLint("MissingPermission")
     private Location getLastLocation() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return null;
         LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
         List<String> providers = lm.getProviders(true);
         Location l = null;
@@ -2880,6 +2893,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     @Override
     public void onPause() {
         super.onPause();
+        if (map != null) { try { map.setMyLocationEnabled(false); } catch (Exception e) { FileLog.e(e); } }
         if (mapView != null && mapsInitialized) {
             try {
                 mapView.onPause();
@@ -2996,8 +3010,8 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             Activity activity = getParentActivity();
             if (activity != null) {
                 checkPermission = false;
-                if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    activity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+                if ((org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                    org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
                 }
             }
         }

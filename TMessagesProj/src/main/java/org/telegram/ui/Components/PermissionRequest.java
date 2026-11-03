@@ -189,7 +189,7 @@ public class PermissionRequest {
                 }
             };
             NotificationCenter.getGlobalInstance().addObserver(observer[0], NotificationCenter.activityPermissionsGranted);
-            activity.requestPermissions(permissions, code);
+            org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, permissions, code);
         } else if (whenDone != null) {
             int[] res = new int[ permissions.length ];
             for (int i = 0; i < permissions.length; ++i) {
@@ -200,6 +200,7 @@ public class PermissionRequest {
     }
 
     public static boolean hasPermission(String permission) {
+        if (org.telegram.messenger.asgram.AsgramLocationPolicy.isLocationPermission(permission) && !org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent()) return false;
         Activity _activity = LaunchActivity.instance;
         if (_activity == null) _activity = AndroidUtilities.findActivity(ApplicationLoader.applicationContext);
         if (_activity == null) return false;

@@ -1,6 +1,6 @@
 # ASGRAM Android
 
-ASGRAM is an unofficial native Telegram app. Version 0.3.1 (8), package com.abdiisabaa.asgram, Android 7+.
+ASGRAM is an unofficial native Telegram app. Version 0.3.2 (9), package com.abdiisabaa.asgram, Android 7+.
 
 The native Java interface includes Feed, Chats, Spaces, Settings and You. Telegram handles sign-in, conversations, private groups, channels, bots and calls. Feed reads verified public channels, offers Latest and For you, topic filters, saved stories, full readers and complete native photo albums. Native Telegram light, dark and custom themes remain available. Channel invitations are optional and require a deliberate Join action; accounts are never silently subscribed.
 
@@ -15,7 +15,7 @@ The source is pinned to Telegram Android 13.1.1, commit 3de37c8. Matching offici
 5. Register com.abdiisabaa.asgram in your own Firebase project and put google-services.json in ASGRAM/. Configure Telegram application push delivery as documented at https://core.telegram.org/api/push-updates. Never reuse upstream Firebase credentials.
 6. For debug: `./gradlew :ASGRAM:assembleDebug :TMessagesProj:testDebugUnitTest --tests org.telegram.messenger.asgram.AsgramFeedTest`.
 7. For release, create a private upload keystore and ignored ASGRAM/keystore.properties with storeFile, storePassword, keyAlias and keyPassword. Run `./gradlew :ASGRAM:bundleRelease :ASGRAM:assembleRelease`.
-8. Check the actual merged release manifest: `python3 Tools/asgram/check_manifest.py ASGRAM/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml --release`. ASGRAM must explicitly declare foreground coarse/fine location permissions; Telegram's library manifest alone only contributes background location.
+8. Check the actual merged release manifest: `python3 Tools/asgram/check_manifest.py ASGRAM/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml --release`. ASGRAM must explicitly declare foreground coarse/fine location permissions and remove the background permission inherited from Telegram's library.
 
 On this Mac, JAVA_HOME is /Applications/Android Studio.app/Contents/jbr/Contents/Home. Signing keys, Telegram API credentials and Firebase configuration must not be committed. Release tasks fail closed when their configuration is missing.
 
@@ -29,6 +29,10 @@ services/premium-shop contains a separate server-side payment and fulfillment im
 
 ## Verification
 
-Thirteen feed/directory/album JUnit tests and six brand/privacy-boundary checks passed. Real sign-in was completed by the account holder. Native chats, Feed, full albums, Spaces and light/dark continuity were checked in the emulator before store preparation. Background push delivery, calls and every native Telegram setting have not all been proven end to end. See ASGRAM-VERIFICATION.md for current release evidence and remaining checks.
+Version 0.3.2 passes twenty-two JUnit tests for feed/directory/album behavior and location consent/service policy, plus eight brand/privacy and packaging checks. Its release manifest, bundle and signing must also be verified before distribution. Earlier real sign-in was completed by the account holder; native chats, Feed, full albums, Spaces and light/dark continuity were checked in the emulator before store preparation. The 0.3.2 correction does not use the signed-in emulator. Background push delivery, calls and every native Telegram setting have not all been proven end to end. See ASGRAM-LOCATION-REVIEW.md for the correction and ASGRAM-VERIFICATION.md for earlier evidence.
 
 The corresponding modified source is published under the retained GPL license. No private credentials or signing material belong in the public repository.
+
+## Location privacy correction (0.3.2)
+
+The ASGRAM manifest removes the library's ACCESS_BACKGROUND_LOCATION permission. Current-location features disclose data use before permission requests, including on an upgrade with an existing Android grant. Live sharing has its own explicit disclosure and continues only as a user-initiated foreground location service with an ongoing notification and stop control. New services cannot start while the UI is hidden, and GPS providers refuse access without the corresponding consent and visible-activity or active-sharing state. Foreground and live consents are separate from sign-in. Back, outside dismissal and Not now never count as permission approval. Existing signed-in emulator data is preserved; this correction does not use private chat screenshots. See ASGRAM-LOCATION-REVIEW.md for resubmission evidence and limits.

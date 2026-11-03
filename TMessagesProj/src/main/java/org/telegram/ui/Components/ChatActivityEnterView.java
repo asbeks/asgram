@@ -11580,8 +11580,8 @@ public class ChatActivityEnterView extends FrameLayout implements
             builder.setTitle(getString("ShareYouLocationTitle", R.string.ShareYouLocationTitle));
             builder.setMessage(getString("ShareYouLocationInfo", R.string.ShareYouLocationInfo));
             builder.setPositiveButton(getString("OK", R.string.OK), (dialogInterface, i) -> {
-                if (Build.VERSION.SDK_INT >= 23 && parentActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    parentActivity.requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+                if (Build.VERSION.SDK_INT >= 23 && (org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || parentActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                    org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(parentActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
                     pendingMessageObject = messageObject;
                     pendingLocationButton = button;
                     return;

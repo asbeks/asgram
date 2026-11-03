@@ -396,7 +396,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             searchAdapter.destroy();
         }
 
-        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
+        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && (org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
 
         ActionBarMenu menu = parentAlert.actionBar.createMenu();
 
@@ -584,7 +584,11 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             if (Build.VERSION.SDK_INT >= 23) {
                 Activity activity = getParentActivity();
                 if (activity != null) {
-                    if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if (!org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent()) {
+                        org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, BasePermissionsActivity.REQUEST_CODE_GEOLOCATION);
+                        return;
+                    }
+                    if ((org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                         AlertsCreator.createLocationRequiredDialog(getParentActivity(), true).show();
                         return;
                     }
@@ -929,6 +933,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
     @Override
     public void onPause() {
+        if (map != null) { try { map.setMyLocationEnabled(false); } catch (Exception e) { FileLog.e(e); } }
         if (mapView != null && mapsInitialized) {
             try {
                 mapView.onPause();
@@ -1120,10 +1125,18 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     public void openShareLiveLocation() {
+        openShareLiveLocation(false);
+    }
+
+    private void openShareLiveLocation(boolean disclosed) {
         if (delegate == null || getParentActivity() == null || myLocation == null) {
             return;
         }
-        if (checkBackgroundPermission && Build.VERSION.SDK_INT >= 29) {
+        if (org.telegram.ui.asgram.AsgramLocationDisclosure.isAsgram() && !disclosed) {
+            org.telegram.ui.asgram.AsgramLocationDisclosure.showLiveConsent(getParentActivity(), () -> openShareLiveLocation(true));
+            return;
+        }
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.isAsgram() && checkBackgroundPermission && Build.VERSION.SDK_INT >= 29) {
             Activity activity = getParentActivity();
             if (activity != null) {
                 checkBackgroundPermission = false;
@@ -1557,6 +1570,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
     @SuppressLint("MissingPermission")
     private Location getLastLocation() {
+        if (!org.telegram.ui.asgram.AsgramLocationDisclosure.canReadLocation()) return null;
         LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
         List<String> providers = lm.getProviders(true);
         Location l = null;
@@ -1683,6 +1697,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
     @Override
     public void onResume() {
+        if (map != null) { try { map.setMyLocationEnabled(true); } catch (Exception e) { FileLog.e(e); } }
         if (mapView != null && mapsInitialized) {
             try {
                 mapView.onResume();
@@ -1725,7 +1740,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 Activity activity = getParentActivity();
                 if (activity != null) {
                     checkPermission = false;
-                    if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    if ((org.telegram.ui.asgram.AsgramLocationDisclosure.hasForegroundConsent() == false || activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                         String[] permissions = parentAlert.isStoryLocationPicker && parentAlert.storyLocationPickerPhotoFile != null && Build.VERSION.SDK_INT >= 29 ?
                             new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_MEDIA_LOCATION} :
                             new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
@@ -1733,7 +1748,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                         if (adapter != null) {
                             adapter.setMyLocationDenied(locationDenied, askedForLocation);
                         }
-                        activity.requestPermissions(permissions, BasePermissionsActivity.REQUEST_CODE_GEOLOCATION);
+                        org.telegram.ui.asgram.AsgramLocationDisclosure.requestPermissions(activity, permissions, BasePermissionsActivity.REQUEST_CODE_GEOLOCATION);
                     } else if (Build.VERSION.SDK_INT >= 29 && parentAlert.isStoryLocationPicker && parentAlert.storyLocationPickerPhotoFile != null && activity.checkSelfPermission(Manifest.permission.ACCESS_MEDIA_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         askedForLocation = true;
                         if (adapter != null) {
