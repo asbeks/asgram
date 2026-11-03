@@ -14,6 +14,8 @@ Find a fresh perspective in Feed: browse recent public-channel posts, explore to
 
 Use Spaces to find private chats, groups, channels and bots. Start a conversation or create a group or channel with native Telegram controls.
 
+Location sharing is optional. Send a location pin, or start Live Location in a chosen chat for the period you select. Live sharing can continue while ASGRAM is not visible, with an ongoing location notification and a stop control. ASGRAM explains location use before asking for permission; signing in and ordinary messaging do not require location access.
+
 Choose a light or dark appearance using Telegram’s native theme settings. Your existing conversations stay on Telegram’s network.
 
 ASGRAM is independent and is not affiliated with, endorsed by or operated by Telegram. A Telegram account and an internet connection are required. Telegram controls account verification and login-code availability. Ordinary cloud chats are not end-to-end encrypted; Telegram Secret Chats are device-specific.
