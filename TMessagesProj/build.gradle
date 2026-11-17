@@ -117,6 +117,14 @@ if (asgramFile.exists()) asgramFile.withInputStream { asgramConfig.load(it) }
 def asgramApiId = (asgramConfig.getProperty('ASGRAM_API_ID', System.getenv('ASGRAM_API_ID') ?: '0')).toInteger()
 def asgramApiHash = asgramConfig.getProperty('ASGRAM_API_HASH', System.getenv('ASGRAM_API_HASH') ?: '')
 if (asgramApiHash && !(asgramApiHash ==~ /[0-9a-fA-F]{32}/)) throw new GradleException('ASGRAM_API_HASH must be a registered 32-character API hash.')
+def reviewerUrl = (asgramConfig.getProperty('ASGRAM_REVIEW_ACCESS_URL', System.getenv('ASGRAM_REVIEW_ACCESS_URL') ?: '')).trim()
+def reviewerTelegramId = (asgramConfig.getProperty('ASGRAM_REVIEW_TELEGRAM_ID', System.getenv('ASGRAM_REVIEW_TELEGRAM_ID') ?: '')).trim()
+if (reviewerUrl && !(reviewerUrl ==~ /https:\/\/[A-Za-z0-9.-]+\/v1\/asgram\/reviewer\/authorize/)) {
+    throw new GradleException('ASGRAM_REVIEW_ACCESS_URL must be an HTTPS host and the /v1/asgram/reviewer/authorize path.')
+}
+if ((reviewerUrl as boolean) != (reviewerTelegramId as boolean) || (reviewerTelegramId && !(reviewerTelegramId ==~ /[1-9][0-9]{0,17}/))) {
+    throw new GradleException('Set ASGRAM_REVIEW_ACCESS_URL and ASGRAM_REVIEW_TELEGRAM_ID together.')
+}
 android {
     compileSdkVersion 36
     buildToolsVersion '36.1.0'
@@ -139,6 +147,9 @@ android {
     sourceSets.main.jniLibs.srcDirs = [rootProject.file('.asgram/nativeLibraries')]
     defaultConfig {
         buildConfigField "int", "ASGRAM_API_ID", asgramApiId.toString()
+        buildConfigField "String", "ASGRAM_REVIEW_ACCESS_URL", '"' + reviewerUrl + '"'
+        buildConfigField "long", "ASGRAM_REVIEW_TELEGRAM_ID", (reviewerTelegramId ?: '0') + 'L'
+
         buildConfigField "String", "ASGRAM_API_HASH", '"' + asgramApiHash + '"'
 
         minSdkVersion 23

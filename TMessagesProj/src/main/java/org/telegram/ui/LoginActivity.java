@@ -126,6 +126,7 @@ import org.telegram.messenger.AuthTokensHelper;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
+import org.telegram.messenger.asgram.AsgramReviewAccess;
 import org.telegram.messenger.CallReceiver;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.Emoji;
@@ -463,6 +464,123 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
     }
 
+    private String reviewerCode;
+    private boolean reviewerSignInPending;
+    private AlertDialog reviewerProgress;
+    private int reviewerRequest;
+    private final Runnable reviewerTimeout = () -> finishReviewerSignIn("Telegram sign-in timed out. Please try again.");
+
+    LoginActivity reviewerSignIn(String code) {
+        reviewerCode = code;
+        reviewerSignInPending = true;
+        return this;
+    }
+
+    private void startReviewerSignIn() {
+        if (reviewerCode == null || reviewerProgress != null || getParentActivity() == null) return;
+        if (!AsgramReviewAccess.configured() || UserConfig.getActivatedAccountsCount() != 0) {
+            finishReviewerSignIn("Reviewer sign-in is unavailable.");
+            return;
+        }
+        reviewerProgress = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
+        reviewerProgress.setOnCancelListener(dialog -> {
+            clearReviewerSignIn();
+            finishFragment();
+        });
+        reviewerProgress.show();
+        AndroidUtilities.runOnUIThread(reviewerTimeout, 35_000);
+        exportReviewerLoginToken(false, 0);
+    }
+
+    private void exportReviewerLoginToken(boolean approved, int poll) {
+        if (!reviewerSignInPending) return;
+        TLRPC.TL_auth_exportLoginToken request = new TLRPC.TL_auth_exportLoginToken();
+        request.api_id = BuildVars.APP_ID;
+        request.api_hash = BuildVars.APP_HASH;
+        sendReviewerRequest(request, ConnectionsManager.DEFAULT_DATACENTER_ID, (response, error) -> {
+            if (response instanceof TLRPC.TL_auth_loginToken) {
+                if (approved) {
+                    if (poll < 7) {
+                        AndroidUtilities.runOnUIThread(() -> exportReviewerLoginToken(true, poll + 1), 450);
+                    } else {
+                        finishReviewerSignIn("Telegram did not finish signing in. Please try again.");
+                    }
+                    return;
+                }
+                String code = reviewerCode;
+                reviewerCode = null;
+                byte[] token = ((TLRPC.TL_auth_loginToken) response).token;
+                Utilities.globalQueue.postRunnable(() -> {
+                    int status = AsgramReviewAccess.approve(code, token);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (!reviewerSignInPending) return;
+                        if (status == 200) exportReviewerLoginToken(true, 0);
+                        else finishReviewerSignIn(status == 401 ? "Check the reviewer access code." : "Reviewer sign-in is unavailable. Please try again.");
+                    });
+                });
+            } else {
+                completeReviewerAuth(response, approved, ConnectionsManager.DEFAULT_DATACENTER_ID);
+            }
+        });
+    }
+
+    private void completeReviewerAuth(TLObject response, boolean approved, int datacenterId) {
+        if (approved && response instanceof TLRPC.TL_auth_loginTokenMigrateTo
+                && datacenterId == ConnectionsManager.DEFAULT_DATACENTER_ID) {
+            TLRPC.TL_auth_loginTokenMigrateTo migration = (TLRPC.TL_auth_loginTokenMigrateTo) response;
+            TLRPC.TL_auth_importLoginToken request = new TLRPC.TL_auth_importLoginToken();
+            request.token = migration.token;
+            sendReviewerRequest(request, migration.dc_id,
+                    (result, error) -> completeReviewerAuth(result, true, migration.dc_id));
+            return;
+        }
+        if (approved && response instanceof TLRPC.TL_auth_loginTokenSuccess) {
+            TLRPC.auth_Authorization auth = ((TLRPC.TL_auth_loginTokenSuccess) response).authorization;
+            if (auth instanceof TLRPC.TL_auth_authorization && ((TLRPC.TL_auth_authorization) auth).user != null
+                    && ((TLRPC.TL_auth_authorization) auth).user.id == org.telegram.messenger.BuildConfig.ASGRAM_REVIEW_TELEGRAM_ID
+                    && UserConfig.getActivatedAccountsCount() == 0) {
+                clearReviewerSignIn();
+                if (datacenterId != ConnectionsManager.DEFAULT_DATACENTER_ID) {
+                    getConnectionsManager().setDefaultDatacenterId(datacenterId);
+                }
+                syncContacts = false;
+                onAuthSuccess((TLRPC.TL_auth_authorization) auth);
+                return;
+            }
+        }
+        finishReviewerSignIn("Telegram could not sign in to the dedicated review account.");
+    }
+
+    private void sendReviewerRequest(TLObject request, int datacenterId, org.telegram.tgnet.RequestDelegate callback) {
+        final int flags = ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagEnableUnauthorized
+                | ConnectionsManager.RequestFlagFailOnServerErrors;
+        reviewerRequest = getConnectionsManager().sendRequest(request, (result, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (reviewerSignInPending) callback.run(result, error);
+        }), null, null, flags, datacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
+        getConnectionsManager().bindRequestToGuid(reviewerRequest, classGuid);
+    }
+
+    private void finishReviewerSignIn(String message) {
+        clearReviewerSignIn();
+        if (getParentActivity() == null) return;
+        new AlertDialog.Builder(getParentActivity()).setTitle("Reviewer sign-in").setMessage(message)
+                .setPositiveButton("OK", (dialog, which) -> finishFragment()).show();
+    }
+
+    private void clearReviewerSignIn() {
+        AndroidUtilities.cancelRunOnUIThread(reviewerTimeout);
+        reviewerSignInPending = false;
+        reviewerCode = null;
+        if (reviewerRequest != 0) {
+            getConnectionsManager().cancelRequest(reviewerRequest, true);
+            reviewerRequest = 0;
+        }
+        if (reviewerProgress != null) {
+            reviewerProgress.dismiss();
+            reviewerProgress = null;
+        }
+    }
+
     public LoginActivity() {
         super();
     }
@@ -509,6 +627,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
     @Override
     public void onFragmentDestroy() {
+        if (reviewerSignInPending) clearReviewerSignIn();
         super.onFragmentDestroy();
         for (int a = 0; a < views.length; a++) {
             if (views[a] != null) {
@@ -920,6 +1039,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         super.onResume();
         if (newAccount) {
             ConnectionsManager.getInstance(currentAccount).setAppPaused(false, false);
+        }
+        if (reviewerSignInPending) {
+            startReviewerSignIn();
+            return;
         }
         AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
         if (fragmentView != null) {
@@ -3371,6 +3494,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         @Override
         public void onShow() {
             super.onShow();
+            if (reviewerSignInPending) return;
             fillNumber();
             if (syncContactsBox != null) {
                 syncContactsBox.setChecked(syncContacts, false);

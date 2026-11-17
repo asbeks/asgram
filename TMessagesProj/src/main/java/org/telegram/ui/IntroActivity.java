@@ -12,9 +12,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -24,8 +26,12 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.asgram.AsgramReviewAccess;
 import org.telegram.tgnet.ConnectionsManager;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.asgram.AsgramLocationDisclosure;
 import org.telegram.ui.Components.SimpleThemeDescription;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -76,13 +82,65 @@ public class IntroActivity extends BaseFragment {
         space(context,0,1);
         space(context,32,0);
         start = text(context,LocaleController.getString(R.string.StartMessaging),16,true); start.setGravity(Gravity.CENTER); start.setMinimumHeight(dp(56));
-        start.setOnClickListener(v -> { if (!starting) { org.telegram.ui.asgram.AsgramLocationDisclosure.showIntroduction(getParentActivity(), () -> { starting=true; presentFragment(new LoginActivity()); }); } });
+        start.setOnClickListener(v -> {
+            if (starting || getParentActivity() == null) return;
+            AsgramLocationDisclosure.showIntroduction(getParentActivity(), () -> {
+                if (starting || getParentActivity() == null) return;
+                starting = true;
+                presentFragment(new LoginActivity());
+            });
+        });
         content.addView(start,new LinearLayout.LayoutParams(-1,dp(56)));
-        space(context,16,0);
+        if (AsgramLocationDisclosure.isAsgram() && UserConfig.getActivatedAccountsCount() == 0) {
+            TextView review = text(context, "Review demo", 14, true);
+            review.setTag("accent");
+            review.setGravity(Gravity.CENTER);
+            review.setOnClickListener(v -> {
+                if (starting || getParentActivity() == null) return;
+                starting = true;
+                presentFragment(new AsgramReviewActivity());
+            });
+            content.addView(review, new LinearLayout.LayoutParams(-1, dp(48)));
+            if (AsgramReviewAccess.configured()) {
+                TextView access = text(context, "Reviewer sign-in", 14, true);
+                access.setTag("accent");
+                access.setGravity(Gravity.CENTER);
+                access.setOnClickListener(v -> showReviewerCode(context));
+                content.addView(access, new LinearLayout.LayoutParams(-1, dp(48)));
+            }
+
+        } else {
+            space(context,16,0);
+        }
         TextView disclosure = text(context,"An unofficial Telegram client\nNot affiliated with Telegram.",12,false); disclosure.setTag("secondary"); disclosure.setGravity(Gravity.CENTER); disclosure.setLineSpacing(dp(3),1f);
         content.addView(disclosure,new LinearLayout.LayoutParams(-1,-2));
         updateColors(); return fragmentView;
     }
+    private void showReviewerCode(Context context) {
+        if (starting || getParentActivity() == null || UserConfig.getActivatedAccountsCount() != 0) return;
+        EditText code = new EditText(context);
+        code.setHint("Reviewer access code");
+        code.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        code.setSingleLine(true);
+        code.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        AlertDialog dialog = new AlertDialog.Builder(getParentActivity())
+                .setTitle("Reviewer sign-in")
+                .setMessage("Enter the access code provided in Google Play Console.")
+                .setView(code).setNegativeButton("Cancel", null).setPositiveButton("Sign in", null).create();
+        dialog.show();
+        dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String value = code.getText().toString().trim();
+            if (!AsgramReviewAccess.validCode(value)) {
+                code.setError("Enter the reviewer access code.");
+                return;
+            }
+            code.setText("");
+            dialog.dismiss();
+            starting = true;
+            presentFragment(new LoginActivity().reviewerSignIn(value));
+        });
+    }
+
     private TextView text(Context c,String value,int size,boolean bold) {
         TextView v=new TextView(c);v.setText(value);v.setTextSize(size);v.setTypeface(bold?AndroidUtilities.bold():Typeface.DEFAULT);v.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);v.setIncludeFontPadding(false);textViews.add(v);return v;
     }

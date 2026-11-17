@@ -59,6 +59,15 @@ import java.util.Locale;
 public final class AsgramHubActivity extends BaseFragment implements MainTabsActivity.TabFragmentDelegate {
     // The debug-only screenshot activity supplies synthetic content before any capture.
     private boolean storePreview;
+    private org.telegram.messenger.asgram.AsgramReviewSession review;
+
+    static AsgramHubActivity forReview(org.telegram.messenger.asgram.AsgramReviewSession session) {
+        AsgramHubActivity feed = new AsgramHubActivity();
+        feed.review = session;
+        return feed;
+    }
+
+    private boolean sampleContent() { return storePreview || review != null; }
     public AsgramHubActivity() {}
     public AsgramHubActivity(boolean preview) { storePreview=org.telegram.messenger.BuildConfig.DEBUG_VERSION && preview; }
     private List<AsgramFeed.Post> posts=new ArrayList<>(),visible=new ArrayList<>();
@@ -75,15 +84,17 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         destroyed=false;
         palette=new AsgramUi.Palette(context);
         actionBar.setTitle("ASGRAM");
-        actionBar.setSubtitle(storePreview?"Unofficial Telegram app · Demo content":"Unofficial Telegram app");
+        actionBar.setSubtitle(sampleContent()?"Unofficial Telegram app · Demo content":"Unofficial Telegram app");
         actionBar.setBackgroundColor(palette.background);
         actionBar.setTitleColor(palette.text);
         actionBar.setSubtitleColor(palette.secondary);
         actionBar.setItemsColor(palette.text,false);
         actionBar.setCastShadows(false);
+        if (review != null) actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(false);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override public void onItemClick(int id) {
+                if(id==-1&&review!=null) {finishFragment();return;}
                 if(storePreview) return;
                 if(id==2) {savedOnly=!savedOnly;applyFilter(true);}
                 else if(id==3)refresh();
@@ -95,10 +106,10 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
                 @Override public void onTextChanged(EditText field) {query=field.getText().toString();applyFilter(false);}
             }).setSearchFieldHint("Search media updates");
         actionBar.createMenu().addItem(2,R.drawable.msg_saved).setContentDescription("Show saved stories");
-        actionBar.createMenu().addItem(3,R.drawable.msg_retry).setContentDescription("Refresh feed");
+        if (review == null) actionBar.createMenu().addItem(3,R.drawable.msg_retry).setContentDescription("Refresh feed");
         FrameLayout root=new FrameLayout(context);
         root.setBackgroundColor(palette.background);
-        root.setPadding(0,AndroidUtilities.statusBarHeight+ActionBar.getCurrentActionBarHeight(),0,0);
+        if (review == null) root.setPadding(0,AndroidUtilities.statusBarHeight+ActionBar.getCurrentActionBarHeight(),0,0);
         fragmentView=root;
         recycler=new RecyclerView(context);
         layoutManager=new LinearLayoutManager(context);
@@ -108,7 +119,8 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         recycler.setItemAnimator(null);
         adapter=new FeedAdapter();recycler.setAdapter(adapter);
         root.addView(recycler,LayoutHelper.createFrame(-1,-1));
-        if(storePreview) {
+        if(sampleContent()) {
+            posts.clear();
             posts.add(new AsgramFeed.Post("asgram_demo/1","News","asgram_demo","Daily Discoveries","A little curiosity. A whole new perspective.\nExplore fresh ideas, places and stories from the channels you love. Read the full story, then save it for later.","sample://landscape",java.time.OffsetDateTime.now().toString()));
             posts.add(new AsgramFeed.Post("asgram_demo/2","Education","asgram_demo","Learning Circle","Make room for one new idea today\nA short reading list for a more thoughtful week.","",java.time.OffsetDateTime.now().minusMinutes(12).toString()));
             posts.add(new AsgramFeed.Post("asgram_demo/3","Sports","asgram_demo","The Sports Desk","Your weekend match guide\nFixtures, highlights and conversations in one place.","",java.time.OffsetDateTime.now().minusMinutes(24).toString()));
@@ -118,7 +130,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     }
     private void applyFilter(boolean toTop) {
         if(recycler==null||destroyed)return;
-        List<AsgramFeed.Post> source=savedOnly?AsgramFeedStore.saved(recycler.getContext()):posts;
+        List<AsgramFeed.Post> source=savedOnly?(review==null?AsgramFeedStore.saved(recycler.getContext()):review.savedStories()):posts;
         visible=new ArrayList<>();String term=query.trim().toLowerCase(Locale.ROOT);
         for(AsgramFeed.Post post:source) {
             if(!savedOnly&&!category.equals("All")&&!category.equals(post.category))continue;
@@ -144,12 +156,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         TextView settings=AsgramUi.text(c,"Media settings",12,palette.primary,true);
         settings.setGravity(Gravity.CENTER);settings.setMinHeight(AsgramUi.dp(48));
         settings.setOnClickListener(v->{if(!storePreview)presentFragment(new AsgramSettingsActivity());});
-        heading.addView(settings,AsgramUi.lp(-2,48));box.addView(heading);
+        if (review == null) heading.addView(settings,AsgramUi.lp(-2,48));box.addView(heading);
         if(!savedOnly) {
             TextView description=AsgramUi.text(c,"Your people. Your stories.",14,palette.secondary,false);
             box.addView(description);AsgramUi.gap(box,18);
             LinearLayout rail=AsgramUi.row(c);rail.setGravity(Gravity.TOP);
-            if(storePreview) {
+            if(sampleContent()) {
                 for(String[] entry:new String[][]{{"Discover","News"},{"Learning","Education"},{"Sports","Sports"},{"Community","Chats"}}) {
                     LinearLayout item=AsgramUi.column(c);item.setGravity(Gravity.CENTER);
                     item.addView(new AsgramUi.Glyph(c,entry[1],palette.primary),AsgramUi.lp(52,52));
@@ -190,7 +202,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             chip.setGravity(Gravity.CENTER);chip.setPadding(AsgramUi.dp(18),0,AsgramUi.dp(18),0);chip.setMinHeight(AsgramUi.dp(48));
             chip.setBackground(Theme.createSimpleSelectorRoundRectDrawable(AsgramUi.dp(24),selected?palette.primary:Color.TRANSPARENT,palette.tint));
             chip.setSelected(selected);chip.setContentDescription("Show "+labels[i]+" stories");
-            chip.setOnClickListener(v->{if(value.equals("Latest")||value.equals("For you")){category="All";latest=value.equals("Latest");AsgramUi.prefs(c).edit().putBoolean("latest_first",latest).apply();}else category=value;savedOnly=false;applyFilter(true);});
+            chip.setOnClickListener(v->{if(value.equals("Latest")||value.equals("For you")){category="All";latest=value.equals("Latest");if(review==null)AsgramUi.prefs(c).edit().putBoolean("latest_first",latest).apply();}else category=value;savedOnly=false;applyFilter(true);});
             filters.addView(chip,AsgramUi.lp(-2,48));
         }
         horizontal.addView(filters);box.addView(horizontal,AsgramUi.lp(-1,48));
@@ -212,7 +224,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     }
     private View syncStatus(Context c) {
         LinearLayout box=padded(c,2,12);
-        String text=storePreview?"English sample posts · No personal account data":loading?"Refreshing…":!complete?"Some updates could not refresh. Showing saved previews. Tap to retry.":lastUpdated(c);
+        String text=sampleContent()?"English sample posts · No personal account data":loading?"Refreshing…":!complete?"Some updates could not refresh. Showing saved previews. Tap to retry.":lastUpdated(c);
         TextView status=AsgramUi.text(c,text,12,palette.secondary,false);status.setMinHeight(AsgramUi.dp(32));
         status.setGravity(Gravity.CENTER_VERTICAL);status.setOnClickListener(v->refresh());box.addView(status);
         return box;
@@ -256,15 +268,15 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         LinearLayout actions=AsgramUi.row(c);
         TextView read=AsgramUi.text(c,post.hasVideo?"Open video  →":post.mediaCount()>1?"Open post · "+post.mediaCount()+" items  →":"Read story  →",14,palette.primary,true);read.setGravity(Gravity.CENTER_VERTICAL);read.setMinHeight(AsgramUi.dp(48));
         read.setOnClickListener(v->read(post));actions.addView(read,new LinearLayout.LayoutParams(0,AsgramUi.dp(48),1));
-        boolean saved=AsgramFeedStore.isSaved(c,post.id);
+        boolean saved=review==null?AsgramFeedStore.isSaved(c,post.id):review.isSaved(post);
         TextView save=AsgramUi.text(c,saved?"Saved":"Save",13,palette.primary,true);save.setGravity(Gravity.CENTER);save.setPadding(AsgramUi.dp(12),0,AsgramUi.dp(12),0);
-        save.setContentDescription((saved?"Unsave ":"Save ")+post.title());save.setOnClickListener(v->{AsgramFeedStore.toggleSave(c,post);applyFilter(false);});
+        save.setContentDescription((saved?"Unsave ":"Save ")+post.title());save.setOnClickListener(v->{if(review==null)AsgramFeedStore.toggleSave(c,post);else review.toggleSave(post);applyFilter(false);});
         actions.addView(save,AsgramUi.lp(-2,48));
-        AsgramUi.Glyph share=new AsgramUi.Glyph(c,"Share",palette.secondary);share.setContentDescription("Share "+post.title());share.setOnClickListener(v->share(post));actions.addView(share,AsgramUi.lp(48,48));
+        AsgramUi.Glyph share=new AsgramUi.Glyph(c,"Share",palette.secondary);share.setContentDescription("Share "+post.title());share.setOnClickListener(v->share(post));if(review==null)actions.addView(share,AsgramUi.lp(48,48));
         copy.addView(actions,AsgramUi.lp(-1,48));card.addView(copy);outside.addView(card);
         if(!lead){AsgramUi.gap(outside,12);AsgramUi.divider(outside,palette);}return outside;
     }
-    private void expand(AsgramFeed.Post post) {if(storePreview)read(post);else openMedia(this,post);}
+    private void expand(AsgramFeed.Post post) {if(sampleContent())read(post);else openMedia(this,post);}
     private static void openMedia(BaseFragment fragment,AsgramFeed.Post post) {
         if(fragment.getParentActivity()==null)return;
         ArrayList<org.telegram.messenger.MessageObject> items=new ArrayList<>();
@@ -277,7 +289,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         PhotoViewer.getInstance().setParentActivity(fragment);
         PhotoViewer.getInstance().openPhoto(items,0,0,0,0,new PhotoViewer.EmptyPhotoViewerProvider());
     }
-    private void read(AsgramFeed.Post post) {AsgramArticleActivity reader=new AsgramArticleActivity(post);reader.setCurrentAccount(currentAccount);presentFragment(reader);}
+    private void read(AsgramFeed.Post post) {AsgramArticleActivity reader=new AsgramArticleActivity(post,review);reader.setCurrentAccount(currentAccount);presentFragment(reader);}
     private String lastUpdated(Context c) {
         long at=AsgramUi.prefs(c).getLong("last_sync",0);
         return at==0?"Refresh for the latest posts":System.currentTimeMillis()-at<60_000?"Just updated":"Updated "+DateUtils.getRelativeTimeSpanString(at,System.currentTimeMillis(),DateUtils.MINUTE_IN_MILLIS).toString().toLowerCase(Locale.ROOT);
@@ -311,7 +323,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         getParentActivity().startActivity(Intent.createChooser(intent,"Share story"));
     }
     private void refresh() {
-        if(storePreview)return;
+        if(sampleContent())return;
         if(loading||fragmentView==null||destroyed)return;loading=true;applyFilter(false);final int generation=++request;
         final Context c=fragmentView.getContext().getApplicationContext();
         AsgramNativeFeed.refresh(c,currentAccount,classGuid,(result,all)->{
@@ -326,7 +338,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             applyFilter(false);
         }
     }
-    @Override public void onFragmentDestroy(){destroyed=true;request++;ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);super.onFragmentDestroy();}
+    @Override public void onFragmentDestroy(){destroyed=true;request++;if(!sampleContent())ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);super.onFragmentDestroy();}
     @Override public boolean isLightStatusBar(){return palette==null||!palette.dark;}
     @Override public boolean canParentTabsSlide(MotionEvent e,boolean forward){return false;}
     @Override public void onParentScrollToTop(){if(recycler!=null)recycler.smoothScrollToPosition(0);}
@@ -345,7 +357,11 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
 
     public static final class AsgramArticleActivity extends BaseFragment {
         private final AsgramFeed.Post post;
-        AsgramArticleActivity(AsgramFeed.Post post) {this.post=post;}
+        private final org.telegram.messenger.asgram.AsgramReviewSession review;
+        AsgramArticleActivity(AsgramFeed.Post post, org.telegram.messenger.asgram.AsgramReviewSession review) {
+            this.post=post;
+            this.review=review;
+        }
         @Override public View createView(Context c) {
             AsgramUi.Palette p=new AsgramUi.Palette(c);actionBar.setTitle(post.category);actionBar.setBackButtonImage(R.drawable.ic_ab_back);
             actionBar.setBackgroundColor(p.background);actionBar.setTitleColor(p.text);actionBar.setItemsColor(p.text,false);
@@ -355,13 +371,13 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             scroll.addView(copy,AsgramUi.lp(-1,-2));fragmentView=scroll;
             copy.addView(AsgramUi.text(c,post.author+" · "+relative(post),13,p.primary,true));AsgramUi.gap(copy,16);
             copy.addView(AsgramUi.text(c,post.title(),23,p.text,true));AsgramUi.gap(copy,20);
-            if(post.hasPhoto()){FrameLayout media=photo(c,post,AsgramFeedStore.canLoadPhotos(c));media.setOnClickListener(v->openMedia(this,post));copy.addView(media,AsgramUi.lp(-1,230));AsgramUi.gap(copy,12);}
+            if(post.hasPhoto()){FrameLayout media=photo(c,post,AsgramFeedStore.canLoadPhotos(c));if(review==null)media.setOnClickListener(v->openMedia(this,post));copy.addView(media,AsgramUi.lp(-1,230));AsgramUi.gap(copy,12);}
             if(post.mediaCount()>1||post.hasVideo){copy.addView(AsgramUi.button(c,"Expand "+(post.mediaCount()>1?post.mediaCount()+" photos and videos":"video"),p,false,()->openMedia(this,post)),AsgramUi.lp(-1,-2));AsgramUi.gap(copy,16);}
             TextView body=AsgramUi.text(c,post.body(),17,p.text,false);body.setTextIsSelectable(true);body.setLineSpacing(AsgramUi.dp(7),1f);copy.addView(body,AsgramUi.lp(-1,-2));AsgramUi.gap(copy,24);
-            copy.addView(AsgramUi.button(c,"Open original in Telegram",p,true,()->{if(!post.channel.equals("asgram_demo"))Browser.openUrl(getParentActivity(),post.url);}),AsgramUi.lp(-1,-2));
+            if (review == null) copy.addView(AsgramUi.button(c,"Open original in Telegram",p,true,()->{if(!post.channel.equals("asgram_demo"))Browser.openUrl(getParentActivity(),post.url);}),AsgramUi.lp(-1,-2));
             AsgramUi.gap(copy,10);
-            TextView save=AsgramUi.button(c,AsgramFeedStore.isSaved(c,post.id)?"Remove from saved":"Save for later",p,false,()->{});
-            save.setOnClickListener(v->{boolean now=AsgramFeedStore.toggleSave(c,post);save.setText(now?"Remove from saved":"Save for later");});
+            TextView save=AsgramUi.button(c,(review==null?AsgramFeedStore.isSaved(c,post.id):review.isSaved(post))?"Remove from saved":"Save for later",p,false,()->{});
+            save.setOnClickListener(v->{boolean now=review==null?AsgramFeedStore.toggleSave(c,post):review.toggleSave(post);save.setText(now?"Remove from saved":"Save for later");});
             copy.addView(save,AsgramUi.lp(-1,-2));return scroll;
         }
         @Override public boolean isLightStatusBar() {return fragmentView==null||!new AsgramUi.Palette(fragmentView.getContext()).dark;}
