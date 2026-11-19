@@ -191,6 +191,10 @@ Feed and Spaces use Telegram action-bar search fields, including native text ent
 
 Spaces is a native directory over the account's existing private/secret chats, groups, channels and bots, with actual peer avatars, names, kinds and unread counts. Its Create action opens native choices; it does not create server folders merely by filtering. Contacts remains an explicit action within Spaces.
 
+### Community Membership
+
+After Telegram sign-in, an account that needs membership sees the four communities and their current status. **Join all and continue** joins the missing communities for the signed-in account. Accounts with confirmed memberships proceed to the app automatically. **Check again** rechecks memberships when approval or a connection is pending.
+
 ### Publisher Identity and Channels
 
 Posts identify their real publisher through the native channel avatar, name and timestamp. When an avatar is unavailable, Telegram's `AvatarDrawable` supplies the native initials fallback. Channels is a native overflow dialog listing Abdii Sabaa, University, Sports, Community and additional verified destinations. The former home channel rail and inline join invitation are absent from the timeline. Opening a destination remains separate from subscribing; official directory entries are verified rather than inferred from advert links.

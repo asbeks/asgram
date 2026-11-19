@@ -82,7 +82,7 @@ public class IntroActivity extends BaseFragment {
         space(context,24,0);
         TextView headline = text(context,"Welcome to\nASGRAM",32,true); headline.setLineSpacing(dp(1),1f); content.addView(headline,new LinearLayout.LayoutParams(-1,-2));
         space(context,16,0);
-        TextView description = text(context,"Sign in with your Telegram account.",16,false); description.setTag("secondary"); description.setLineSpacing(dp(5),1f); content.addView(description,new LinearLayout.LayoutParams(-1,-2));
+        TextView description = text(context,"Sign in with Telegram. Community membership is required.",16,false); description.setTag("secondary"); description.setLineSpacing(dp(5),1f); content.addView(description,new LinearLayout.LayoutParams(-1,-2));
         space(context,26,0);
         space(context,0,1);
         space(context,32,0);
