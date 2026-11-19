@@ -3,10 +3,13 @@ package org.telegram.messenger.asgram;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.telegram.messenger.MessageObject;
+import org.telegram.tgnet.TLRPC;
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -15,17 +18,33 @@ import java.util.Set;
 public final class AsgramFeed {
     public static final class Post {
         public final String id, category, channel, author, text, imageUrl, date, url;
-        public org.telegram.tgnet.TLRPC.Photo nativePhoto;
-        public org.telegram.tgnet.TLRPC.Message nativeMessage;
+        public final List<String> imageUrls;
+        public TLRPC.Photo nativePhoto;
+        public TLRPC.Message nativeMessage;
         public int nativeAccount;
         public long groupedId;
-        public final List<org.telegram.tgnet.TLRPC.Message> nativeAlbum=new ArrayList<>();
-        public int mediaCount(){return Math.max(nativeAlbum.size(),hasPhoto()||hasVideo?1:0);}
+        public final List<TLRPC.Message> nativeAlbum = new ArrayList<>();
         public boolean hasVideo;
         public boolean hasPhoto(){return nativePhoto!=null||!imageUrl.isEmpty();}
         public Post(String id, String category, String channel, String author, String text, String imageUrl, String date) {
+            this(id, category, channel, author, text, imageUrl.isEmpty()
+                    ? java.util.Collections.emptyList() : java.util.Collections.singletonList(imageUrl), date);
+        }
+        public Post(String id, String category, String channel, String author, String text, List<String> imageUrls, String date) {
             this.id=id; this.category=category; this.channel=channel; this.author=author;
-            this.text=normalizeText(text); this.imageUrl=imageUrl; this.date=date; this.url="https://t.me/"+id;
+            this.imageUrls = java.util.Collections.unmodifiableList(new ArrayList<>(imageUrls));
+            this.text=normalizeText(text); this.imageUrl=imageUrls.isEmpty() ? "" : imageUrls.get(0); this.date=date; this.url="https://t.me/"+id;
+        }
+        public List<TLRPC.Message> nativeMedia() {
+            List<TLRPC.Message> source = nativeAlbum.isEmpty() && nativeMessage != null
+                    ? java.util.Collections.singletonList(nativeMessage) : nativeAlbum;
+            List<TLRPC.Message> media = new ArrayList<>();
+            for (TLRPC.Message message : source) {
+                if (message.media != null && (message.media.photo != null || MessageObject.isVideoDocument(message.media.document))) {
+                    media.add(message);
+                }
+            }
+            return media;
         }
         public long timestamp() {
             try { return OffsetDateTime.parse(date).toInstant().toEpochMilli(); } catch (Exception e) { return 0L; }
@@ -79,15 +98,14 @@ public final class AsgramFeed {
                 body.select("br").append("\\n");
                 text=body.wholeText().replace("\\n","\n").trim();
             }
-            String image="";
-            Element photo=message.selectFirst(".tgme_widget_message_photo_wrap");
-            if (photo!=null) {
+            Set<String> images = new LinkedHashSet<>();
+            for (Element photo : message.select(".tgme_widget_message_photo_wrap")) {
                 java.util.regex.Matcher m=java.util.regex.Pattern.compile("url\\(['\"]?([^'\")]+)").matcher(photo.attr("style"));
-                if (m.find() && allowedImage(m.group(1))) image=m.group(1);
+                if (m.find() && allowedImage(m.group(1))) images.add(m.group(1));
             }
-            if (text.isEmpty() && image.isEmpty()) continue;
+            if (text.isEmpty() && images.isEmpty()) continue;
             String category=channel.equalsIgnoreCase("ABDII_SABAA") ? "News" : "Education";
-            result.add(new Post(id,category,channel,category.equals("News")?"Abdii Sabaa":"Abdii Sabaa University",text,image,time==null?"":time.attr("datetime")));
+            result.add(new Post(id,category,channel,category.equals("News")?"Abdii Sabaa":"Abdii Sabaa University",text,new ArrayList<>(images),time==null?"":time.attr("datetime")));
         }
         result.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));
         return result;
@@ -99,16 +117,18 @@ public final class AsgramFeed {
         List<Post> result=new ArrayList<>();
         for(List<Post> group:groups.values()) {
             Post caption=group.get(0);long newest=caption.timestamp();String newestDate=caption.date;
-            java.util.Map<Integer,org.telegram.tgnet.TLRPC.Message> media=new java.util.TreeMap<>();
+            java.util.Map<Integer,TLRPC.Message> media=new java.util.TreeMap<>();
+            Set<String> images = new LinkedHashSet<>();
             for(Post p:group){
                 if((caption.text.isEmpty()&&!p.text.isEmpty())||(caption.nativeMessage==null&&p.nativeMessage!=null&&!p.text.isEmpty()))caption=p;
                 if(p.timestamp()>newest){newest=p.timestamp();newestDate=p.date;}
                 if(p.nativeMessage!=null)media.put(p.nativeMessage.id,p.nativeMessage);
-                for(org.telegram.tgnet.TLRPC.Message m:p.nativeAlbum)media.put(m.id,m);
+                for(TLRPC.Message m:p.nativeAlbum)media.put(m.id,m);
+                images.addAll(p.imageUrls);
             }
-            Post album=new Post(caption.id,caption.category,caption.channel,caption.author,caption.text,caption.imageUrl,newestDate);
+            Post album=new Post(caption.id,caption.category,caption.channel,caption.author,caption.text,new ArrayList<>(images),newestDate);
             album.nativeMessage=caption.nativeMessage;album.nativeAccount=caption.nativeAccount;album.nativePhoto=caption.nativePhoto;album.groupedId=caption.groupedId;album.hasVideo=caption.hasVideo;
-            for(org.telegram.tgnet.TLRPC.Message m:media.values()){album.nativeAlbum.add(m);if(m.media!=null){if(album.nativePhoto==null&&m.media.photo!=null)album.nativePhoto=m.media.photo;if(m.media.document!=null)album.hasVideo=true;}}
+            for(TLRPC.Message m:media.values()){album.nativeAlbum.add(m);if(m.media!=null){if(album.nativePhoto==null&&m.media.photo!=null)album.nativePhoto=m.media.photo;if(MessageObject.isVideoDocument(m.media.document))album.hasVideo=true;}}
             result.add(album);
         }
         result.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));return result;

@@ -74,7 +74,9 @@ public final class AsgramFeedStore {
         for(AsgramFeed.Post p:posts) {
             try {
                 JSONObject j=new JSONObject();j.put("id",p.id);j.put("category",p.category);j.put("channel",p.channel);
-                j.put("grouped_id",p.groupedId);j.put("author",p.author);j.put("text",p.text);j.put("image",p.imageUrl);j.put("date",p.date);array.put(j);
+                j.put("grouped_id",p.groupedId);j.put("author",p.author);j.put("text",p.text);j.put("image",p.imageUrl);j.put("date",p.date);
+                if (p.imageUrls.size() > 1) j.put("images", new JSONArray(p.imageUrls));
+                array.put(j);
             } catch(Exception ignored) {}
         }
         return array.toString();
@@ -93,8 +95,17 @@ public final class AsgramFeedStore {
             for(int i=0;i<Math.min(array.length(),200);i++) {
                 JSONObject j=array.getJSONObject(i);String channel=j.optString("channel"),id=j.optString("id");
                 if(!(AsgramFeed.allowedChannel(channel)||trusted.contains(channel.toLowerCase(java.util.Locale.ROOT)))||!id.matches("(?i)"+java.util.regex.Pattern.quote(channel)+"/[0-9]+"))continue;
-                String image=j.optString("image");if(!AsgramFeed.allowedImage(image))image="";
-                AsgramFeed.Post post=new AsgramFeed.Post(id,j.optString("category"),channel,j.optString("author"),j.optString("text"),image,j.optString("date"));post.groupedId=j.optLong("grouped_id",0);posts.add(post);
+                java.util.Set<String> images = new java.util.LinkedHashSet<>();
+                String image = j.optString("image");
+                if (AsgramFeed.allowedImage(image)) images.add(image);
+                JSONArray album = j.optJSONArray("images");
+                if (album != null) {
+                    for (int photo = 0; photo < album.length(); photo++) {
+                        String url = album.optString(photo);
+                        if (AsgramFeed.allowedImage(url)) images.add(url);
+                    }
+                }
+                AsgramFeed.Post post=new AsgramFeed.Post(id,j.optString("category"),channel,j.optString("author"),j.optString("text"),new ArrayList<>(images),j.optString("date"));post.groupedId=j.optLong("grouped_id",0);posts.add(post);
             }
         } catch(Exception ignored) {}
         return posts;

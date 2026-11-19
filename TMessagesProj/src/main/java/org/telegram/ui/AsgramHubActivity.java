@@ -42,6 +42,7 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.asgram.AsgramNativeFeed;
 import org.telegram.messenger.asgram.AsgramDirectory;
 import org.telegram.messenger.R;
@@ -130,7 +131,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     }
     private void applyFilter(boolean toTop) {
         if(recycler==null||destroyed)return;
-        List<AsgramFeed.Post> source=savedOnly?AsgramFeedStore.saved(recycler.getContext()):posts;
+        List<AsgramFeed.Post> source = savedOnly ? savedWithLiveMedia(recycler.getContext()) : posts;
         visible=new ArrayList<>();String term=query.trim().toLowerCase(Locale.ROOT);
         for(AsgramFeed.Post post:source) {
             if(!savedOnly&&!category.equals("All")&&!category.equals(post.category))continue;
@@ -145,6 +146,19 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         actionBar.createMenu().getItem(2).setContentDescription(savedOnly ? "Back to feed" : "Saved posts");
         adapter.notifyDataSetChanged();
         if(toTop)layoutManager.scrollToPositionWithOffset(0,0);
+    }
+    private List<AsgramFeed.Post> savedWithLiveMedia(Context context) {
+        List<AsgramFeed.Post> saved = AsgramFeedStore.saved(context);
+        for (int i = 0; i < saved.size(); i++) {
+            AsgramFeed.Post item = saved.get(i);
+            for (AsgramFeed.Post live : posts) {
+                if (item.id.equals(live.id)) {
+                    saved.set(i, live);
+                    break;
+                }
+            }
+        }
+        return saved;
     }
     private LinearLayout padded(Context c,int top,int bottom) {
         LinearLayout column=AsgramUi.column(c);
@@ -299,17 +313,16 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         text.setEllipsize(TextUtils.TruncateAt.END);
         text.setOnClickListener(v -> read(post));
         card.addView(text, AsgramUi.lp(-1, -2));
-        if (post.hasPhoto()) {
+        View media = postMedia(c, this, post, 200, sampleContent() ? () -> read(post) : null);
+        if (media != null) {
             AsgramUi.gap(card, 12);
-            FrameLayout media = photo(c, post, AsgramFeedStore.canLoadPhotos(c));
-            media.setOnClickListener(v -> expand(post));
-            card.addView(media, AsgramUi.lp(-1, 200));
+            card.addView(media, AsgramUi.lp(-1, -2));
         }
         AsgramUi.gap(card, 4);
         LinearLayout actions = AsgramUi.row(c);
         TextView read = postAction(c, post.hasVideo ? "Watch" : "Open",
                 post.hasVideo ? R.drawable.msg_round_play_m : R.drawable.msg_openin,
-                () -> { if (post.hasVideo) expand(post); else read(post); });
+                () -> { if (post.hasVideo && !sampleContent()) watch(this, post); else read(post); });
         actions.addView(read, new LinearLayout.LayoutParams(0, AsgramUi.dp(48), 1));
         boolean saved = AsgramFeedStore.isSaved(c, post.id);
         TextView save = postAction(c, saved ? "Saved" : "Save", R.drawable.msg_saved, () -> {
@@ -344,37 +357,112 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         return button;
     }
 
-    private void expand(AsgramFeed.Post post) {if(sampleContent())read(post);else openMedia(this,post);}
-    private static void openMedia(BaseFragment fragment,AsgramFeed.Post post) {
-        if(fragment.getParentActivity()==null)return;
-        ArrayList<org.telegram.messenger.MessageObject> items=new ArrayList<>();
-        for(org.telegram.tgnet.TLRPC.Message m:post.nativeAlbum) {
-            if(m.media!=null&&(m.media.photo!=null||org.telegram.messenger.MessageObject.isVideoDocument(m.media.document)))
-                items.add(new org.telegram.messenger.MessageObject(post.nativeAccount,m,false,true));
+    private static void watch(BaseFragment fragment, AsgramFeed.Post post) {
+        List<TLRPC.Message> nativeMedia = post.nativeMedia();
+        for (int i = 0; i < nativeMedia.size(); i++) {
+            if (MessageObject.isVideoDocument(nativeMedia.get(i).media.document)) {
+                openMedia(fragment, post, nativeMedia, i);
+                return;
+            }
         }
-        if(items.isEmpty()&&post.nativeMessage!=null&&post.nativePhoto!=null)items.add(new org.telegram.messenger.MessageObject(post.nativeAccount,post.nativeMessage,false,true));
-        if(items.isEmpty()){Browser.openUrl(fragment.getParentActivity(),post.url);return;}
+        if (fragment.getParentActivity() != null) Browser.openUrl(fragment.getParentActivity(), post.url);
+    }
+
+    private static void openMedia(BaseFragment fragment, AsgramFeed.Post post, List<TLRPC.Message> nativeMedia, int index) {
+        if (fragment.getParentActivity() == null) return;
+        if (nativeMedia.isEmpty()) {
+            Browser.openUrl(fragment.getParentActivity(), post.url);
+            return;
+        }
+        ArrayList<MessageObject> items = new ArrayList<>();
+        for (TLRPC.Message message : nativeMedia) {
+            items.add(new MessageObject(post.nativeAccount, message, false, true));
+        }
         PhotoViewer.getInstance().setParentActivity(fragment);
-        PhotoViewer.getInstance().openPhoto(items,0,0,0,0,new PhotoViewer.EmptyPhotoViewerProvider());
+        PhotoViewer.getInstance().openPhoto(items, index, 0, 0, 0, new PhotoViewer.EmptyPhotoViewerProvider());
     }
     private void read(AsgramFeed.Post post) {AsgramArticleActivity reader=new AsgramArticleActivity(post);reader.setCurrentAccount(currentAccount);presentFragment(reader);}
-    static FrameLayout photo(Context c,AsgramFeed.Post post,boolean load) {
-        AsgramUi.Palette p=new AsgramUi.Palette(c);FrameLayout frame=new FrameLayout(c);frame.setBackground(AsgramUi.shape(p.tint,12));
-        if(org.telegram.messenger.BuildConfig.DEBUG_VERSION && post.imageUrl.equals("sample://landscape")) {
-            ImageView sample=new ImageView(c);sample.setImageResource(R.drawable.asgram_store_landscape);sample.setScaleType(ImageView.ScaleType.CENTER_CROP);sample.setContentDescription("Preview landscape");frame.addView(sample,LayoutHelper.createFrame(-1,-1));
-        } else if(load) {
-            BackupImageView image=new BackupImageView(c);image.setRoundRadius(AsgramUi.dp(12));image.setAspectFit(false);
-            if(post.nativePhoto!=null) {
-                image.getImageReceiver().setCurrentAccount(post.nativeAccount);
-                org.telegram.tgnet.TLRPC.PhotoSize size=FileLoader.getClosestPhotoSizeWithSize(post.nativePhoto.sizes,800);
-                image.setImage(ImageLocation.getForPhoto(size,post.nativePhoto),"800_500",(android.graphics.drawable.Drawable)null,post.nativeMessage);
-            } else image.setImage(ImageLocation.getForPath(post.imageUrl),"800_500",(android.graphics.drawable.Drawable)null,post);
-            image.setContentDescription("Photo from "+post.author);frame.addView(image,LayoutHelper.createFrame(-1,-1));
+    private static View postMedia(Context context, BaseFragment fragment, AsgramFeed.Post post, int fullHeight, Runnable previewClick) {
+        List<TLRPC.Message> nativeMedia = post.nativeMedia();
+        int count = nativeMedia.isEmpty() ? post.imageUrls.size() : nativeMedia.size();
+        if (count == 0) return null;
+
+        AsgramUi.Palette palette = new AsgramUi.Palette(context);
+        LinearLayout gallery = AsgramUi.column(context);
+        Runnable showGallery = () -> {
+            gallery.removeAllViews();
+            for (int start = 0; start < count;) {
+                int columns = start == 0 && count % 2 != 0 ? 1 : 2;
+                if (start > 0) AsgramUi.gap(gallery, 8);
+                LinearLayout row = AsgramUi.row(context);
+                for (int column = 0; column < columns; column++) {
+                    int index = start + column;
+                    TLRPC.Message message = nativeMedia.isEmpty() ? null : nativeMedia.get(index);
+                    String url = message == null ? post.imageUrls.get(index) : "";
+                    FrameLayout image = mediaTile(context, palette, post, message, url, columns == 1);
+                    String kind = message != null && message.media.photo == null ? "Video" : "Photo";
+                    image.setContentDescription(count == 1 ? kind + " from " + post.author : kind + " " + (index + 1) + " of " + count + " from " + post.author);
+                    image.setOnClickListener(v -> {
+                        if (previewClick != null) previewClick.run();
+                        else if (!post.channel.equals("asgram_demo")) openMedia(fragment, post, nativeMedia, index);
+                    });
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1);
+                    if (column > 0) params.setMarginStart(AsgramUi.dp(8));
+                    row.addView(image, params);
+                }
+                gallery.addView(row, AsgramUi.lp(-1, columns == 1 ? fullHeight : 116));
+                start += columns;
+            }
+        };
+        if (previewClick != null || AsgramFeedStore.canLoadPhotos(context)) {
+            showGallery.run();
         } else {
-            TextView button=AsgramUi.text(c,"Load photo",14,p.primary,true);button.setGravity(Gravity.CENTER);frame.addView(button,LayoutHelper.createFrame(-1,-1));
-            button.setOnClickListener(v->{frame.removeAllViews();frame.addView(photo(c,post,true),LayoutHelper.createFrame(-1,-1));});
+            String label = count > 1 ? "Load " + count + " previews" : post.hasVideo ? "Load video preview" : "Load photo";
+            gallery.addView(AsgramUi.button(context, label, palette, false, showGallery), AsgramUi.lp(-1, 48));
         }
-        if(post.mediaCount()>1){TextView count=AsgramUi.text(c,"▣ "+post.mediaCount()+" · Tap to expand",12,Color.WHITE,true);count.setPadding(AsgramUi.dp(10),AsgramUi.dp(6),AsgramUi.dp(10),AsgramUi.dp(6));count.setBackground(AsgramUi.shape(0xbb111111,12));frame.addView(count,LayoutHelper.createFrame(-2,-2,Gravity.RIGHT|Gravity.BOTTOM,8,8,8,8));}
+        return gallery;
+    }
+
+    private static FrameLayout mediaTile(Context context, AsgramUi.Palette palette, AsgramFeed.Post post,
+                                         TLRPC.Message message, String url, boolean fullWidth) {
+        FrameLayout frame = new FrameLayout(context);
+        frame.setBackground(AsgramUi.shape(palette.tint, 12));
+        frame.setClipToOutline(true);
+        if (org.telegram.messenger.BuildConfig.DEBUG_VERSION && url.equals("sample://landscape")) {
+            ImageView sample = new ImageView(context);
+            sample.setImageResource(R.drawable.asgram_store_landscape);
+            sample.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            frame.addView(sample, LayoutHelper.createFrame(-1, -1));
+            return frame;
+        }
+
+        BackupImageView image = new BackupImageView(context);
+        image.setAspectFit(false);
+        boolean video = message != null && message.media.photo == null;
+        int previewSize = fullWidth ? 800 : 480;
+        ImageLocation location;
+        if (message == null) {
+            location = ImageLocation.getForPath(url);
+        } else {
+            image.getImageReceiver().setCurrentAccount(post.nativeAccount);
+            if (video) {
+                TLRPC.Document document = message.media.document;
+                location = ImageLocation.getForDocument(FileLoader.getClosestPhotoSizeWithSize(document.thumbs, previewSize), document);
+            } else {
+                TLRPC.Photo photo = message.media.photo;
+                location = ImageLocation.getForPhoto(FileLoader.getClosestPhotoSizeWithSize(photo.sizes, previewSize), photo);
+            }
+        }
+        image.setImage(location, fullWidth ? "800_500" : "480_300", (Drawable) null, message == null ? post : message);
+        frame.addView(image, LayoutHelper.createFrame(-1, -1));
+        if (video) {
+            ImageView play = new ImageView(context);
+            play.setImageResource(R.drawable.msg_round_play_m);
+            play.setColorFilter(Color.WHITE);
+            play.setPadding(AsgramUi.dp(8), AsgramUi.dp(8), AsgramUi.dp(8), AsgramUi.dp(8));
+            play.setBackground(AsgramUi.shape(0xb3000000, 20));
+            frame.addView(play, LayoutHelper.createFrame(40, 40, Gravity.CENTER));
+        }
         return frame;
     }
     private static String relative(AsgramFeed.Post post) {
@@ -433,8 +521,11 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             scroll.addView(copy,AsgramUi.lp(-1,-2));fragmentView=scroll;
             copy.addView(AsgramUi.text(c,post.author+" · "+relative(post),13,p.primary,true));AsgramUi.gap(copy,16);
             copy.addView(AsgramUi.text(c,post.title(),23,p.text,true));AsgramUi.gap(copy,20);
-            if(post.hasPhoto()){FrameLayout media=photo(c,post,AsgramFeedStore.canLoadPhotos(c));media.setOnClickListener(v->openMedia(this,post));copy.addView(media,AsgramUi.lp(-1,230));AsgramUi.gap(copy,12);}
-            if(post.mediaCount()>1||post.hasVideo){copy.addView(AsgramUi.button(c,"Expand "+(post.mediaCount()>1?post.mediaCount()+" photos and videos":"video"),p,false,()->openMedia(this,post)),AsgramUi.lp(-1,-2));AsgramUi.gap(copy,16);}
+            View media = postMedia(c, this, post, 230, null);
+            if (media != null) {
+                copy.addView(media, AsgramUi.lp(-1, -2));
+                AsgramUi.gap(copy, 12);
+            }
             TextView body=AsgramUi.text(c,post.body(),17,p.text,false);body.setTextIsSelectable(true);body.setLineSpacing(AsgramUi.dp(7),1f);copy.addView(body,AsgramUi.lp(-1,-2));AsgramUi.gap(copy,24);
             if (!post.channel.equals("asgram_demo")) {
                 copy.addView(AsgramUi.button(c, "Open in Telegram", p, true,

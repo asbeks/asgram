@@ -125,7 +125,7 @@
       "User-selected Telegram theme roles shared across Feed, Spaces and inherited screens.",
       "Android system sans, scaled text, native navigation, dialogs, keyboard and touch feedback.",
       "Flat custom story surfaces alongside inherited Telegram navigation and full-screen media behavior.",
-      "Visible loading, cached, failure, empty, saved, photo-loading and album-count states."
+      "Visible loading, cached, failure, empty, saved and data-saving states, with in-post media galleries."
     ],
     "rules": [
       {

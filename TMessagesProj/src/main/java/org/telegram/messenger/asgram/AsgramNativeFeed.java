@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -73,19 +74,27 @@ public final class AsgramNativeFeed {
             // A bot/user or a private invite can never become an official publisher through discovery.
             if(chat==null||!ChatObject.isChannelAndNotMegaGroup(chat)||chat.username==null||!chat.username.equalsIgnoreCase(entry.username)){oneDone.run();return;}
             if(!entry.username.equalsIgnoreCase("ABDII_SABAA")&&!entry.username.equalsIgnoreCase("abdii_sabaa_university"))try{JSONObject j=new JSONObject();j.put("username",chat.username);j.put("title",chat.title);verified.put(j);}catch(Exception ignored){}
-            TLRPC.TL_messages_getHistory req=new TLRPC.TL_messages_getHistory();req.peer=controller.getInputPeer(-chat.id);req.limit=20;
+            TLRPC.TL_messages_getHistory req=new TLRPC.TL_messages_getHistory();req.peer=controller.getInputPeer(-chat.id);
+            // Include the tail of any album crossing the 20-message feed boundary.
+            req.limit=29;
             int id=ConnectionsManager.getInstance(account).sendRequest(req,(response,error)->AndroidUtilities.runOnUIThread(()->{
                 if(finished.get())return;
                 if(response instanceof TLRPC.messages_Messages){TLRPC.messages_Messages res=(TLRPC.messages_Messages)response;
                     controller.putUsers(res.users,false);controller.putChats(res.chats,false);successes[0]++;
-                    for(TLRPC.Message message:res.messages){
+                    long boundaryAlbum = res.messages.size() >= 20 ? res.messages.get(19).grouped_id : 0;
+                    for (int index = 0; index < res.messages.size(); index++) {
+                        TLRPC.Message message = res.messages.get(index);
+                        if (index >= 20 && (boundaryAlbum == 0 || message.grouped_id != boundaryAlbum)) break;
                         if(message instanceof TLRPC.TL_messageService||message.id<=0)continue;
                         String text=message.message==null?"":message.message;
                         TLRPC.Photo photo=message.media==null?null:message.media.photo;
-                        boolean video=message.media!=null&&message.media.document!=null;
-                        if(text.isEmpty()&&photo==null&&!video)continue;
+                        TLRPC.Document document=message.media==null?null:message.media.document;
+                        boolean video=MessageObject.isVideoDocument(document);
+                        if(text.isEmpty()&&photo==null&&document==null)continue;
                         String postId=chat.username+"/"+message.id;
-                        AsgramFeed.Post post=new AsgramFeed.Post(postId,entry.category,chat.username,chat.title,text,"",Instant.ofEpochSecond(message.date).toString());
+                        AsgramFeed.Post previous = merged.get(postId);
+                        AsgramFeed.Post post=new AsgramFeed.Post(postId,entry.category,chat.username,chat.title,text,
+                                previous == null ? java.util.Collections.emptyList() : previous.imageUrls,Instant.ofEpochSecond(message.date).toString());
                         post.nativePhoto=photo;post.nativeAccount=account;post.nativeMessage=message;post.groupedId=message.grouped_id;post.hasVideo=video;merged.put(postId,post);
                     }
                 }oneDone.run();

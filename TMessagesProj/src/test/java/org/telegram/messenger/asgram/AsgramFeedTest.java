@@ -75,10 +75,38 @@ public class AsgramFeedTest {
     @Test public void combinesAlbumsWithoutHidingTheCaptionOrLosingPhotos() {
         AsgramFeed.Post first=new AsgramFeed.Post("ABDII_SABAA/50","News","ABDII_SABAA","Abdii Sabaa","","","2026-10-29T09:00:00Z");first.groupedId=7;
         AsgramFeed.Post caption=new AsgramFeed.Post("ABDII_SABAA/51","News","ABDII_SABAA","Abdii Sabaa","Real album caption","","2026-10-29T09:00:01Z");caption.groupedId=7;
-        org.telegram.tgnet.TLRPC.TL_message a=new org.telegram.tgnet.TLRPC.TL_message();a.id=50;first.nativeMessage=a;
-        org.telegram.tgnet.TLRPC.TL_message b=new org.telegram.tgnet.TLRPC.TL_message();b.id=51;caption.nativeMessage=b;
-        List<AsgramFeed.Post> result=AsgramFeed.mergeAlbums(java.util.Arrays.asList(first,caption));
-        assertEquals(1,result.size());assertEquals("Real album caption",result.get(0).text);assertEquals(2,result.get(0).mediaCount());assertEquals(50,result.get(0).nativeAlbum.get(0).id);
+        org.telegram.tgnet.TLRPC.TL_message a = albumPhoto(50);
+        org.telegram.tgnet.TLRPC.TL_message b = albumPhoto(51);
+        first.nativeMessage = a;
+        caption.nativeMessage = b;
+        caption.nativeAlbum.add(a);
+        caption.nativeAlbum.add(albumPhoto(52));
+        List<AsgramFeed.Post> result = AsgramFeed.mergeAlbums(java.util.Arrays.asList(caption, first));
+        assertEquals(1, result.size());
+        assertEquals("Real album caption", result.get(0).text);
+        assertEquals(java.util.Arrays.asList(a, b, caption.nativeAlbum.get(1)), result.get(0).nativeMedia());
+    }
+
+    @Test public void keepsEveryAllowedAlbumPreviewInOrder() {
+        String first = "https://cdn4.telesco.pe/file/first.jpg";
+        String second = "https://cdn5.telesco.pe/file/second.jpg";
+        String html = "<div class='tgme_widget_message' data-post='ABDII_SABAA/67'>"
+                + preview(first) + preview("https://outside.example/a.jpg") + preview(second) + preview(first) + "</div>";
+        List<AsgramFeed.Post> posts = AsgramFeed.parse(html, "ABDII_SABAA");
+        assertEquals(1, posts.size());
+        assertEquals(java.util.Arrays.asList(first, second), posts.get(0).imageUrls);
+    }
+
+    private static String preview(String url) {
+        return "<a class='tgme_widget_message_photo_wrap' style=\"background-image:url('" + url + "')\"></a>";
+    }
+
+    private static org.telegram.tgnet.TLRPC.TL_message albumPhoto(int id) {
+        org.telegram.tgnet.TLRPC.TL_message message = new org.telegram.tgnet.TLRPC.TL_message();
+        message.id = id;
+        message.media = new org.telegram.tgnet.TLRPC.TL_messageMediaPhoto();
+        message.media.photo = new org.telegram.tgnet.TLRPC.TL_photo();
+        return message;
     }
     @Test public void albumIdsDoNotMergeAcrossDifferentChannels() {
         AsgramFeed.Post first=new AsgramFeed.Post("ABDII_SABAA/50","News","ABDII_SABAA","Abdii Sabaa","One","","2026-10-29T09:00:00Z");first.groupedId=7;

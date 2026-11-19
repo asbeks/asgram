@@ -88,7 +88,7 @@ This is the current native Android design record, derived from `AsgramHubActivit
 - User-selected Telegram theme roles shared across Feed, Spaces and inherited screens.
 - Android system sans, scaled text, native navigation, dialogs, keyboard and touch feedback.
 - Flat custom story surfaces alongside inherited Telegram navigation and full-screen media behavior.
-- Visible loading, cached, failure, empty, saved, photo-loading and album-count states.
+- Visible loading, cached, failure, empty, saved and data-saving states, with in-post media galleries.
 
 ## Colors
 
@@ -197,9 +197,9 @@ Posts identify their real publisher through the native channel avatar, name and 
 
 ### Media and Albums
 
-`BackupImageView` loads real Telegram media. Data saving can replace a preview with a **Load photo** action. A multi-item post remains one Feed story, with an item-count overlay and **Tap to expand** wording. Tapping available native media opens Telegram's `PhotoViewer` with the photo/video album items, retaining its swipe, thumbnail, zoom, sharing and Back behavior. If native media is unavailable, the source Telegram link is the fallback.
+`BackupImageView` loads Telegram previews. Each album appears in one Feed story and shows all its items in order. A single preview keeps the full content width. Multi-item galleries use two columns, with a full-width first item when the count is odd. Data saving offers a **Load previews** action. Tapping a native tile opens that item in `PhotoViewer`, where users can swipe through the album. Public web previews link to the original Telegram post.
 
-The reader keeps the full heading and selectable body separate. It offers native media expansion, the original Telegram post and a local save toggle. Do not apply the Feed's five-line post preview cap to this reader or reproduce an album as separate fake Feed posts.
+The reader keeps the full heading and selectable body separate. It offers the same in-post gallery, the original Telegram post and a local save toggle.
 
 ### Native Preferences
 
