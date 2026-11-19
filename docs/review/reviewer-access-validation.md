@@ -43,3 +43,7 @@ All 25 Java tests, eight packaging tests and three gateway tests passed. Bundlet
 On a fresh install, touch and hold **ASGRAM** at the upper left of the welcome screen. Enter the existing reviewer code in **Reviewer sign-in**. The offline demo has been removed. Reviewers reach the dedicated Telegram account and can inspect the native Feed, Chats, Spaces, Settings and You screens.
 
 ASGRAM checks the dedicated account's memberships in the four official Abdii Sabaa communities. Maintain all four memberships on the reviewer account. If the membership screen appears, it lists the destinations and **Join all and continue** joins any missing community. If Telegram requires manual approval, review access depends on approval being granted.
+
+## Build 15 reviewer sign-in
+
+Touch and hold **ASGRAM** on the welcome screen and enter the existing reviewer code. The dedicated account opens Feed and Chats without a channel membership check blocking access. Channel setup is optional and runs in the background after consent.

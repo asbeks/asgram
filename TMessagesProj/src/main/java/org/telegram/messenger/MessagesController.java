@@ -272,6 +272,7 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean blockedEndReached;
 
     private LongSparseArray<ArrayList<Integer>> channelViewsToSend = new LongSparseArray<>();
+    private final java.util.HashSet<Long> visibleFeedChannels = new java.util.HashSet<>();
     private LongSparseArray<SparseArray<MessageObject>> pollsToCheck = new LongSparseArray<>();
     private int pollsToCheckSize;
     private long lastViewsCheckTime;
@@ -6546,6 +6547,7 @@ public class MessagesController extends BaseController implements NotificationCe
         joiningToChannels.clear();
         migratedChats.clear();
         channelViewsToSend.clear();
+        visibleFeedChannels.clear();
         pollsToCheck.clear();
         pollsToCheckSize = 0;
         dialogsServerOnly.clear();
@@ -10591,7 +10593,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     TLRPC.TL_messages_getMessagesViews req = new TLRPC.TL_messages_getMessagesViews();
                     req.peer = getInputPeer(key);
                     req.id = channelViewsToSend.valueAt(a);
-                    req.increment = a == 0;
+                    req.increment = a == 0 || visibleFeedChannels.contains(key);
                     getConnectionsManager().sendRequest(req, (response, error) -> {
                         if (response != null) {
                             TLRPC.TL_messages_messageViews res = (TLRPC.TL_messages_messageViews) response;
@@ -10640,6 +10642,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     });
                 }
                 channelViewsToSend.clear();
+                visibleFeedChannels.clear();
             }
             if (pollsToCheckSize > 0) {
                 AndroidUtilities.runOnUIThread(() -> {
@@ -14332,10 +14335,15 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void addToViewsQueue(MessageObject messageObject) {
+        addToViewsQueue(messageObject, false);
+    }
+
+    public void addToViewsQueue(MessageObject messageObject, boolean visibleInAsgramFeed) {
         if (messageObject == null) return;
         Utilities.stageQueue.postRunnable(() -> {
             long peer = messageObject.getDialogId();
             int id = messageObject.getId();
+            if (visibleInAsgramFeed) visibleFeedChannels.add(peer);
             ArrayList<Integer> ids = channelViewsToSend.get(peer);
             if (ids == null) {
                 ids = new ArrayList<>();

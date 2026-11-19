@@ -42,19 +42,16 @@ public final class AsgramNativeFeed {
         }));
     }
     public static List<AsgramDirectory.Entry> entries(Context c) {
-        List<AsgramDirectory.Entry> list=new ArrayList<>();
-        list.add(new AsgramDirectory.Entry("ABDII_SABAA","Abdii Sabaa","News"));
-        list.add(new AsgramDirectory.Entry("abdii_sabaa_university","University","Education"));
+        List<AsgramDirectory.Entry> list=new ArrayList<>(AsgramDirectory.PUBLISHERS);
         try {JSONArray array=new JSONArray(AsgramUi.prefs(c).getString("directory_verified","[]"));
             for(int i=0;i<Math.min(array.length(),8);i++){JSONObject j=array.getJSONObject(i);list.add(new AsgramDirectory.Entry(j.getString("username"),j.getString("title"),"News"));}
         }catch(Exception ignored){}return list;
     }
     private static void loadAll(Context c,int account,int guid,Callback callback) {
-        List<AsgramDirectory.Entry> sources=new ArrayList<>();
-        sources.add(new AsgramDirectory.Entry("ABDII_SABAA","Abdii Sabaa","News"));sources.add(new AsgramDirectory.Entry("abdii_sabaa_university","Abdii Sabaa University","Education"));
+        List<AsgramDirectory.Entry> sources=new ArrayList<>(AsgramDirectory.PUBLISHERS);
         try{JSONArray names=new JSONArray(AsgramUi.prefs(c).getString("directory_declared","[]"));for(int i=0;i<Math.min(8,names.length());i++)sources.add(new AsgramDirectory.Entry(names.getString(i),names.getString(i),"News"));}catch(Exception ignored){}
         Map<String,AsgramFeed.Post> merged=new LinkedHashMap<>();
-        // Only the two original public publishers can enter the HTML/cache fallback.
+        // Only known public publishers can enter the HTML/cache fallback.
         for(AsgramFeed.Post p:AsgramFeedStore.cached(c))merged.put(p.id,p);
         JSONArray verified=new JSONArray();int[] remaining={sources.size()},successes={0};AtomicBoolean finished=new AtomicBoolean();
         Runnable finish=()->{if(!finished.compareAndSet(false,true))return;
@@ -73,7 +70,7 @@ public final class AsgramNativeFeed {
             TLRPC.Chat chat=peerId!=null&&peerId<0?controller.getChat(-peerId):null;
             // A bot/user or a private invite can never become an official publisher through discovery.
             if(chat==null||!ChatObject.isChannelAndNotMegaGroup(chat)||chat.username==null||!chat.username.equalsIgnoreCase(entry.username)){oneDone.run();return;}
-            if(!entry.username.equalsIgnoreCase("ABDII_SABAA")&&!entry.username.equalsIgnoreCase("abdii_sabaa_university"))try{JSONObject j=new JSONObject();j.put("username",chat.username);j.put("title",chat.title);verified.put(j);}catch(Exception ignored){}
+            if(!AsgramFeed.allowedChannel(entry.username))try{JSONObject j=new JSONObject();j.put("username",chat.username);j.put("title",chat.title);verified.put(j);}catch(Exception ignored){}
             TLRPC.TL_messages_getHistory req=new TLRPC.TL_messages_getHistory();req.peer=controller.getInputPeer(-chat.id);
             // Include the tail of any album crossing the 20-message feed boundary.
             req.limit=29;

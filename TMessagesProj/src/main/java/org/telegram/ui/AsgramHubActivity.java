@@ -12,6 +12,7 @@ package org.telegram.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -20,6 +21,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.StyleSpan;
+import android.text.method.LinkMovementMethod;
 import android.text.format.DateUtils;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -43,8 +45,12 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MediaDataController;
+import org.telegram.messenger.MessagesController;
+import org.telegram.tgnet.tl.TL_update;
 import org.telegram.messenger.asgram.AsgramNativeFeed;
 import org.telegram.messenger.asgram.AsgramDirectory;
+import org.telegram.messenger.asgram.AsgramCommunityMembership;
 import org.telegram.messenger.R;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.asgram.AsgramFeed;
@@ -59,6 +65,8 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.asgram.AsgramUi;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 
@@ -74,6 +82,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     private boolean savedOnly,loading,destroyed,complete=true;
     private AsgramUi.Palette palette;
     private RecyclerView recycler;
+    private FrameLayout headerHost;
+    private AsgramCommunityMembership communitySetup;
+    private long communityUserId;
+    private boolean showingFeed;
+    private final Set<String> viewedPosts = new HashSet<>();
+    private final Set<String> pendingReactions = new HashSet<>();
     private LinearLayoutManager layoutManager;
     private FeedAdapter adapter;
     private int request;
@@ -108,10 +122,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         more.addSubItem(4, R.drawable.msg_channel, "Channels");
         more.addSubItem(5, R.drawable.msg_retry, "Refresh");
         more.addSubItem(6, R.drawable.msg_settings, "Feed settings");
-        FrameLayout root=new FrameLayout(context);
+        LinearLayout root = AsgramUi.column(context);
         root.setBackgroundColor(palette.background);
         root.setPadding(0,AndroidUtilities.statusBarHeight+ActionBar.getCurrentActionBarHeight(),0,0);
         fragmentView=root;
+        headerHost = new FrameLayout(context);
+        root.addView(headerHost, AsgramUi.lp(-1, -2));
         recycler=new RecyclerView(context);
         layoutManager=new LinearLayoutManager(context);
         recycler.setLayoutManager(layoutManager);
@@ -119,7 +135,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         recycler.setPadding(0,0,0,AndroidUtilities.navigationBarHeight+AsgramUi.dp(104));
         recycler.setItemAnimator(null);
         adapter=new FeedAdapter();recycler.setAdapter(adapter);
-        root.addView(recycler,LayoutHelper.createFrame(-1,-1));
+        root.addView(recycler, new LinearLayout.LayoutParams(-1, 0, 1));
+        recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override public void onScrolled(@NonNull RecyclerView view, int dx, int dy) {
+                recordVisiblePosts();
+            }
+        });
         if(sampleContent()) {
             posts.clear();
             posts.add(new AsgramFeed.Post("asgram_demo/1","News","asgram_demo","Daily Discoveries","Walking the mountain trail\nPhotos from the morning hike.","sample://landscape",java.time.OffsetDateTime.now().toString()));
@@ -144,8 +165,11 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         }
         actionBar.setTitle(savedOnly ? "Saved posts" : "ASGRAM");
         actionBar.createMenu().getItem(2).setContentDescription(savedOnly ? "Back to feed" : "Saved posts");
+        headerHost.removeAllViews();
+        headerHost.addView(header(recycler.getContext()), LayoutHelper.createFrame(-1, -2));
         adapter.notifyDataSetChanged();
         if(toTop)layoutManager.scrollToPositionWithOffset(0,0);
+        recycler.post(this::recordVisiblePosts);
     }
     private List<AsgramFeed.Post> savedWithLiveMedia(Context context) {
         List<AsgramFeed.Post> saved = AsgramFeedStore.saved(context);
@@ -201,7 +225,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         HorizontalScrollView horizontal = new HorizontalScrollView(c);
         horizontal.setHorizontalScrollBarEnabled(false);
         LinearLayout filters = AsgramUi.row(c);
-        for (String value : new String[]{"All", "News", "Education", "Sports"}) {
+        for (String value : new String[]{"All", "News", AsgramDirectory.AMHARIC, "Education", "Sports"}) {
             boolean selected = category.equals(value);
             TextView chip = AsgramUi.text(c, value, 13, selected ? palette.inverse : palette.text, selected);
             chip.setGravity(Gravity.CENTER);
@@ -233,10 +257,58 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         labels.add("Community"); urls.add("https://t.me/Garee_Abdii_Sabaa");
         for (AsgramDirectory.Entry entry : AsgramNativeFeed.entries(getParentActivity())) {
             String url = "https://t.me/" + entry.username;
-            if (!urls.contains(url)) { labels.add(entry.title); urls.add(url); }
+            if (urls.stream().noneMatch(url::equalsIgnoreCase)) { labels.add(entry.title); urls.add(url); }
         }
         new AlertDialog.Builder(getParentActivity()).setTitle("Channels")
                 .setItems(labels.toArray(new String[0]), (dialog, which) -> open(urls.get(which))).show();
+    }
+
+    private View feedStatus(Context c) {
+        LinearLayout notices = AsgramUi.column(c);
+        if (!sampleContent() && !savedOnly && communitySetup != null) {
+            String choice = AsgramUi.prefs(c).getString("community_setup_choice_" + communityUserId, "");
+            if (communitySetup.isBusy()) {
+                LinearLayout row = padded(c, 4, 8);
+                row.addView(AsgramUi.text(c, "Setting up…", 13, palette.secondary, false));
+                notices.addView(row);
+            } else if (choice.isEmpty()) {
+                LinearLayout row = padded(c, 0, 6);
+                TextView action = AsgramUi.button(c, "Set up Abdii Sabaa channels", palette, false, () -> {
+                    if (getParentActivity() == null) return;
+                    new AlertDialog.Builder(getParentActivity()).setTitle("Join Abdii Sabaa channels?")
+                            .setMessage("Join News, University, Sports, and አማርኛ with your Telegram account. You can keep using ASGRAM during setup.")
+                            .setPositiveButton("Join channels", (dialog, which) -> chooseCommunitySetup(true))
+                            .setNegativeButton("Not now", (dialog, which) -> chooseCommunitySetup(false)).show();
+                });
+                row.addView(action, AsgramUi.lp(-1, -2));
+                notices.addView(row);
+            }
+        }
+        notices.addView(syncStatus(c));
+        return notices;
+    }
+
+    private void chooseCommunitySetup(boolean join) {
+        if (fragmentView == null || communitySetup == null || getUserConfig().getClientUserId() != communityUserId) return;
+        AsgramUi.prefs(fragmentView.getContext()).edit().putString("community_setup_choice_" + communityUserId,
+                join ? "join" : "skip").apply();
+        if (join) communitySetup.joinMissing();
+        adapter.notifyItemChanged(0);
+    }
+
+    private void beginCommunitySetup() {
+        if (sampleContent() || fragmentView == null || !getUserConfig().isClientActivated()) return;
+        long userId = getUserConfig().getClientUserId();
+        if (userId == communityUserId) return;
+        if (communitySetup != null) communitySetup.close();
+        communityUserId = userId;
+        android.content.SharedPreferences preferences = AsgramUi.prefs(fragmentView.getContext());
+        communitySetup = new AsgramCommunityMembership(currentAccount, userId, preferences,
+                () -> { if (!destroyed && adapter != null) adapter.notifyItemChanged(0); });
+        if ("join".equals(preferences.getString("community_setup_choice_" + userId, ""))) {
+            communitySetup.joinMissing();
+        }
+        adapter.notifyItemChanged(0);
     }
 
     private View syncStatus(Context c) {
@@ -309,9 +381,16 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             preview.setSpan(new StyleSpan(Typeface.BOLD), 0, firstLine, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             text.setText(preview);
         }
+        if (post.nativeMessage != null && !TextUtils.isEmpty(post.nativeMessage.message)) {
+            SpannableString linked = new SpannableString(post.nativeMessage.message);
+            MessageObject.addLinks(false, linked);
+            MessageObject.addEntitiesToText(linked, post.nativeMessage.entities, false, true, false, false);
+            text.setText(linked);
+            text.setMovementMethod(LinkMovementMethod.getInstance());
+        }
         text.setMaxLines(5);
         text.setEllipsize(TextUtils.TruncateAt.END);
-        text.setOnClickListener(v -> read(post));
+        text.setOnClickListener(v -> { if (sampleContent()) read(post); else open(post.url); });
         card.addView(text, AsgramUi.lp(-1, -2));
         View media = postMedia(c, this, post, 200, sampleContent() ? () -> read(post) : null);
         if (media != null) {
@@ -320,9 +399,8 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         }
         AsgramUi.gap(card, 4);
         LinearLayout actions = AsgramUi.row(c);
-        TextView read = postAction(c, post.hasVideo ? "Watch" : "Open",
-                post.hasVideo ? R.drawable.msg_round_play_m : R.drawable.msg_openin,
-                () -> { if (post.hasVideo && !sampleContent()) watch(this, post); else read(post); });
+        TextView read = postAction(c, sampleContent() ? "Open" : "Open post", R.drawable.msg_openin,
+                () -> { if (sampleContent()) read(post); else open(post.url); });
         actions.addView(read, new LinearLayout.LayoutParams(0, AsgramUi.dp(48), 1));
         boolean saved = AsgramFeedStore.isSaved(c, post.id);
         TextView save = postAction(c, saved ? "Saved" : "Save", R.drawable.msg_saved, () -> {
@@ -335,6 +413,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         share.setContentDescription("Share " + post.title());
         actions.addView(share, new LinearLayout.LayoutParams(0, AsgramUi.dp(48), 1));
         card.addView(actions, AsgramUi.lp(-1, 48));
+        if (!sampleContent()) addChannelActions(card, post);
         AsgramUi.gap(card, 8);
         AsgramUi.divider(card, palette);
         return card;
@@ -357,15 +436,122 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         return button;
     }
 
-    private static void watch(BaseFragment fragment, AsgramFeed.Post post) {
-        List<TLRPC.Message> nativeMedia = post.nativeMedia();
-        for (int i = 0; i < nativeMedia.size(); i++) {
-            if (MessageObject.isVideoDocument(nativeMedia.get(i).media.document)) {
-                openMedia(fragment, post, nativeMedia, i);
-                return;
+    private void addChannelActions(LinearLayout card, AsgramFeed.Post post) {
+        TLRPC.Message message = post.nativeMessage;
+        if (message == null || !message.post || message.peer_id == null || message.peer_id.channel_id == 0) return;
+        Context context = card.getContext();
+        LinearLayout row = AsgramUi.row(context);
+        StringBuilder preview = new StringBuilder();
+        if (message.reactions != null) {
+            for (TLRPC.ReactionCount count : message.reactions.results) {
+                if (count.reaction instanceof TLRPC.TL_reactionEmoji) {
+                    if (preview.length() > 0) preview.append("   ");
+                    preview.append(((TLRPC.TL_reactionEmoji) count.reaction).emoticon).append(' ').append(count.count);
+                    if (preview.length() > 24) break;
+                }
             }
         }
-        if (fragment.getParentActivity() != null) Browser.openUrl(fragment.getParentActivity(), post.url);
+        String label = preview.length() > 0 ? preview.toString() : "React";
+        TextView react = AsgramUi.text(context, label, 13, palette.primary, true);
+        react.setGravity(Gravity.CENTER_VERTICAL);
+        react.setMinHeight(AsgramUi.dp(48));
+        react.setContentDescription("React to post");
+        react.setEnabled(!pendingReactions.contains(post.id));
+        react.setOnClickListener(v -> showChannelReactions(post));
+        row.addView(react, new LinearLayout.LayoutParams(0, AsgramUi.dp(48), 1));
+        if (message.replies != null && message.replies.comments && message.replies.replies > 0) {
+            TextView comments = AsgramUi.text(context, message.replies.replies + " comments", 13, palette.secondary, false);
+            comments.setGravity(Gravity.CENTER_VERTICAL);
+            comments.setOnClickListener(v -> open(post.url));
+            row.addView(comments, AsgramUi.lp(-2, 48));
+        }
+        card.addView(row, AsgramUi.lp(-1, 48));
+    }
+
+    private void showChannelReactions(AsgramFeed.Post post) {
+        TLRPC.Message message = post.nativeMessage;
+        long channelId = message.peer_id.channel_id;
+        if (getParentActivity() == null || pendingReactions.contains(post.id)) return;
+        TLRPC.ChatFull chatFull = getMessagesController().getChatFull(channelId);
+        if (chatFull != null) {
+            showChannelReactions(post, chatFull);
+            return;
+        }
+        TLRPC.Chat channel = getMessagesController().getChat(channelId);
+        if (channel == null) { open(post.url); return; }
+        TLRPC.TL_channels_getFullChannel request = new TLRPC.TL_channels_getFullChannel();
+        request.channel = MessagesController.getInputChannel(channel);
+        pendingReactions.add(post.id);
+        int id = getConnectionsManager().sendRequest(request, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            pendingReactions.remove(post.id);
+            if (destroyed || !showingFeed || isPaused() || getParentActivity() == null) return;
+            if (response instanceof TLRPC.TL_messages_chatFull) {
+                showChannelReactions(post, ((TLRPC.TL_messages_chatFull) response).full_chat);
+            } else {
+                open(post.url);
+            }
+        }), ConnectionsManager.RequestFlagFailOnServerErrors);
+        getConnectionsManager().bindRequestToGuid(id, classGuid);
+    }
+
+    private void showChannelReactions(AsgramFeed.Post post, TLRPC.ChatFull full) {
+        List<String> emoji = new ArrayList<>();
+        if (full != null && full.available_reactions instanceof TLRPC.TL_chatReactionsSome) {
+            for (TLRPC.Reaction reaction : ((TLRPC.TL_chatReactionsSome) full.available_reactions).reactions) {
+                if (reaction instanceof TLRPC.TL_reactionEmoji) emoji.add(((TLRPC.TL_reactionEmoji) reaction).emoticon);
+            }
+        } else if (full != null && full.available_reactions instanceof TLRPC.TL_chatReactionsAll) {
+            for (TLRPC.TL_availableReaction reaction : MediaDataController.getInstance(currentAccount).getEnabledReactionsList()) {
+                if (emoji.size() == 12) break;
+                emoji.add(reaction.reaction);
+            }
+        }
+        if (emoji.isEmpty()) { open(post.url); return; }
+        String[] choices = new String[emoji.size() + 1];
+        for (int index = 0; index < emoji.size(); index++) choices[index] = emoji.get(index);
+        choices[emoji.size()] = "Open post for more options";
+        AlertDialog dialog = new AlertDialog.Builder(getParentActivity()).setTitle("React to post")
+                .setItems(choices, (d, selection) -> {
+                    if (selection < emoji.size()) sendChannelReaction(post, emoji.get(selection));
+                    else open(post.url);
+                }).create();
+        showDialog(dialog);
+    }
+
+    private void sendChannelReaction(AsgramFeed.Post post, String emoji) {
+        if (!pendingReactions.add(post.id)) return;
+        TLRPC.Message message = post.nativeMessage;
+        TLRPC.TL_messages_sendReaction request = new TLRPC.TL_messages_sendReaction();
+        long channelId = message.peer_id.channel_id;
+        request.peer = getMessagesController().getInputPeer(-channelId);
+        request.msg_id = message.id;
+        request.reaction.addAll(AsgramFeed.toggleEmojiReaction(message.reactions, emoji, getMessagesController().getMaxUserReactionsCount()));
+        if (!request.reaction.isEmpty()) request.flags |= 1;
+        int id = getConnectionsManager().sendRequest(request, (response, error) -> {
+            if (response instanceof TLRPC.Updates) getMessagesController().processUpdates((TLRPC.Updates) response, false);
+            AndroidUtilities.runOnUIThread(() -> {
+                pendingReactions.remove(post.id);
+                if (destroyed || fragmentView == null) return;
+                if (response instanceof TLRPC.Updates) {
+                    for (TLRPC.Update event : ((TLRPC.Updates) response).updates) {
+                        if (!(event instanceof TL_update.TL_updateMessageReactions)) continue;
+                        TL_update.TL_updateMessageReactions update = (TL_update.TL_updateMessageReactions) event;
+                        if (update.msg_id == message.id && update.peer != null && update.peer.channel_id == channelId) {
+                            message.reactions = update.reactions;
+                            adapter.notifyDataSetChanged();
+                            return;
+                        }
+                    }
+                    refresh();
+                } else if (showingFeed && !isPaused() && getParentActivity() != null) {
+                    showDialog(new AlertDialog.Builder(getParentActivity()).setTitle("Reaction couldn’t be added")
+                            .setMessage("Try again or open the channel post to see which reactions are available.")
+                            .setPositiveButton("Open post", (dialog, which) -> open(post.url))
+                            .setNegativeButton("Close", null).create());
+                }
+            });
+        }, ConnectionsManager.RequestFlagFailOnServerErrors);
+        getConnectionsManager().bindRequestToGuid(id, classGuid);
     }
 
     private static void openMedia(BaseFragment fragment, AsgramFeed.Post post, List<TLRPC.Message> nativeMedia, int index) {
@@ -490,19 +676,55 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             applyFilter(false);
         }
     }
-    @Override public void onFragmentDestroy(){destroyed=true;request++;if(!sampleContent())ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);super.onFragmentDestroy();}
+    @Override public void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        showingFeed = true;
+        beginCommunitySetup();
+        if (recycler != null) recycler.post(this::recordVisiblePosts);
+    }
+
+    @Override public void onBecomeFullyHidden() {
+        showingFeed = false;
+        super.onBecomeFullyHidden();
+    }
+
+    private void recordVisiblePosts() {
+        if (sampleContent() || !showingFeed || isPaused() || recycler == null || !recycler.isShown() || !recycler.hasWindowFocus()) return;
+        Rect bounds = new Rect();
+        for (int index = 0; index < recycler.getChildCount(); index++) {
+            View row = recycler.getChildAt(index);
+            Object tag = row.getTag();
+            if (!(tag instanceof AsgramFeed.Post) || !row.getGlobalVisibleRect(bounds)
+                    || bounds.height() * 2 < Math.min(row.getHeight(), recycler.getHeight())) continue;
+            AsgramFeed.Post post = (AsgramFeed.Post) tag;
+            TLRPC.Message message = post.nativeMessage;
+            if (message == null || !message.post || message.id <= 0
+                    || (message.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) == 0 || !viewedPosts.add(post.id)) continue;
+            getMessagesController().addToViewsQueue(new MessageObject(post.nativeAccount, message, false, false), true);
+        }
+    }
+
+    @Override public void onFragmentDestroy(){
+        destroyed=true;
+        request++;
+        if (communitySetup != null) communitySetup.close();
+        if(!sampleContent()) ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);
+        super.onFragmentDestroy();
+    }
     @Override public boolean isLightStatusBar(){return palette==null||!palette.dark;}
     @Override public boolean canParentTabsSlide(MotionEvent e,boolean forward){return false;}
     @Override public void onParentScrollToTop(){if(recycler!=null)recycler.smoothScrollToPosition(0);}
     private final class FeedAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        @Override public int getItemCount(){return 2+Math.max(1,visible.size());}
-        @Override public int getItemViewType(int position){return position<2?position:2;}
+        @Override public int getItemCount(){return 1+Math.max(1,visible.size());}
+        @Override public int getItemViewType(int position){return position==0?0:1;}
         @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,int type){
             FrameLayout frame=new FrameLayout(parent.getContext());frame.setLayoutParams(new RecyclerView.LayoutParams(-1,-2));return new RecyclerView.ViewHolder(frame){};
         }
         @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder,int position){
             FrameLayout frame=(FrameLayout)holder.itemView;frame.removeAllViews();Context c=frame.getContext();
-            View child=position==0?header(c):position==1?syncStatus(c):visible.isEmpty()?empty(c):story(c,visible.get(position-2));
+            AsgramFeed.Post post = position > 0 && !visible.isEmpty() ? visible.get(position - 1) : null;
+            frame.setTag(post);
+            View child = position == 0 ? feedStatus(c) : post == null ? empty(c) : story(c, post);
             frame.addView(child,LayoutHelper.createFrame(-1,-2));
         }
     }

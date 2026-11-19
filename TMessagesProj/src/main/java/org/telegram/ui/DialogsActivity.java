@@ -499,6 +499,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private float contactsAlpha = 1f;
     private ValueAnimator contactsAlphaAnimator;
     private ViewPage[] viewPages;
+    private long recentOutgoingChat;
     private ActionBarMenuItem passcodeItem;
     private ActionBarMenuItem downloadsItem;
     private DownloadProgressIcon downloadProgressIcon;
@@ -2899,6 +2900,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 observersGroup.addGlobal(NotificationCenter.proxySettingsChanged);
                 observersGroup.add(NotificationCenter.filterSettingsUpdated);
                 observersGroup.add(NotificationCenter.dialogsUnreadCounterChanged);
+                if (hasMainTabs && folderId == 0 && communityId == 0) {
+                    observersGroup.add(NotificationCenter.didReceiveNewMessages);
+                }
             }
             observersGroup
                 .add(NotificationCenter.dialogsNeedReload)
@@ -7021,10 +7025,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
-        if (!onlySelect && initialDialogsType == DIALOGS_TYPE_DEFAULT && folderId == 0 && communityId == 0 && TextUtils.isEmpty(searchString)) {
-            AndroidUtilities.runOnUIThread(() -> org.telegram.ui.asgram.AsgramCommunityInvitation.maybeShow(DialogsActivity.this,currentAccount), 1000);
-        }
-
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }
@@ -7360,6 +7360,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onBecomeFullyVisible() {
         super.onBecomeFullyVisible();
+        if (recentOutgoingChat != 0 && viewPages != null && !dialogsListFrozen) {
+            long dialogId = recentOutgoingChat;
+            recentOutgoingChat = 0;
+            ViewPage page = viewPages[0];
+            if (getDialogsArray(currentAccount, page.dialogsType, folderId, false).stream().anyMatch(dialog -> dialog.id == dialogId)) {
+                AndroidUtilities.cancelRunOnUIThread(page.updateListRunnable);
+                page.updating = false;
+                page.dialogsAdapter.notifyDataSetChanged();
+                scrollToTop(false, false);
+            }
+        }
         if (isArchive()) {
             SharedPreferences preferences = MessagesController.getGlobalMainSettings();
             boolean showArchiveHint = preferences.getBoolean("archivehint", true);
@@ -10516,7 +10527,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.dialogsNeedReload) {
+        if (id == NotificationCenter.didReceiveNewMessages) {
+            long dialogId = (Long) args[0];
+            int mode = (Integer) args[3];
+            BaseFragment current = getParentLayout() == null ? null : getParentLayout().getLastFragment();
+            if (mode == ChatActivity.MODE_DEFAULT && current instanceof ChatActivity
+                    && ((ChatActivity) current).getDialogId() == dialogId) {
+                for (MessageObject message : (ArrayList<MessageObject>) args[1]) {
+                    if (message != null && message.isOut() && message.isSending()) {
+                        recentOutgoingChat = dialogId;
+                        break;
+                    }
+                }
+            }
+        } else if (id == NotificationCenter.dialogsNeedReload) {
             if (viewPages == null || dialogsListFrozen) {
                 return;
             }

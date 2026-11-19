@@ -1189,44 +1189,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         return frameLayout;
     }
 
-    private org.telegram.ui.asgram.AsgramCommunityGate asgramCommunityGate;
-    private Intent pendingAsgramCommunityLink;
-    private int communityDrawerVisibility;
-    private boolean communityAccessBlocked;
-
-    private void updateAsgramCommunityGate(boolean foreground) {
-        if (!"com.abdiisabaa.asgram".equals(getPackageName()) || frameLayout == null || isFinishing()) return;
-        if (asgramCommunityGate == null) {
-            asgramCommunityGate = new org.telegram.ui.asgram.AsgramCommunityGate(this, this::onAsgramCommunityAccessChanged);
-            frameLayout.addView(asgramCommunityGate, LayoutHelper.createFrame(-1, -1));
-        }
-        asgramCommunityGate.showForAccount(currentAccount, foreground);
-        if (asgramCommunityGate.blocksAccess()) asgramCommunityGate.bringToFront();
-        onAsgramCommunityAccessChanged();
-    }
-
-    private void onAsgramCommunityAccessChanged() {
-        boolean blocked = asgramCommunityGate.blocksAccess();
-        if (communityAccessBlocked != blocked) {
-            communityAccessBlocked = blocked;
-            if (blocked) {
-                communityDrawerVisibility = drawerLayoutContainer.getVisibility();
-                drawerLayoutContainer.setVisibility(View.INVISIBLE);
-            } else {
-                drawerLayoutContainer.setVisibility(communityDrawerVisibility);
-            }
-        }
-        if (!blocked && pendingAsgramCommunityLink != null) {
-            Intent link = pendingAsgramCommunityLink;
-            pendingAsgramCommunityLink = null;
-            if (UserConfig.getInstance(currentAccount).isClientActivated()) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (!isFinishing() && !isDestroyed()) handleIntent(link, true, false, false);
-                });
-            }
-        }
-    }
-
     private boolean switchingAccount;
     public void switchToAccount(int account, boolean removeAll) {
         switchToAccount(account, removeAll, obj -> new MainTabsActivity());
@@ -1237,7 +1199,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             return;
         }
         switchingAccount = true;
-        pendingAsgramCommunityLink = null;
 
         ConnectionsManager.getInstance(currentAccount).setAppPaused(true, false);
         UserConfig.selectedAccount = account;
@@ -1277,7 +1238,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         updateCurrentConnectionState(currentAccount);
 
         switchingAccount = false;
-        updateAsgramCommunityGate(false);
     }
 
     private void switchToAvailableAccountOrLogout() {
@@ -1302,8 +1262,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 rightActionBarLayout.rebuildLogout();
             }
             presentFragment(new IntroActivity().setOnLogout());
-            pendingAsgramCommunityLink = null;
-            updateAsgramCommunityGate(false);
         }
     }
 
@@ -1443,10 +1401,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             .alpha(0f)
                             .setDuration(150)
                             .setInterpolator(AndroidUtilities.accelerateInterpolator)
-                            .withEndAction(() -> {
-                                termsOfServiceView.setVisibility(View.GONE);
-                                updateAsgramCommunityGate(false);
-                            })
+                            .withEndAction(() -> termsOfServiceView.setVisibility(View.GONE))
                             .start();
                 }
 
@@ -1554,6 +1509,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @SuppressLint("Range")
     private boolean handleIntent(Intent intent, boolean isNew, boolean restore, boolean fromPassword, Browser.Progress progress, boolean rebuildFragments, boolean openedTelegram) {
+        if (GiftInfoBottomSheet.handleIntent(intent, progress)) {
+            return true;
+        }
+        if (UserSelectorBottomSheet.handleIntent(intent, progress)) {
+            return true;
+        }
         if (AndroidUtilities.handleProxyIntent(this, intent, true)) {
             return true;
         }
@@ -1586,14 +1547,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 passcodeSaveIntentIsRestore = restore;
                 return false;
             }
-        }
-        updateAsgramCommunityGate(false);
-        if (communityAccessBlocked) {
-            if (action != null && !Intent.ACTION_MAIN.equals(action)) pendingAsgramCommunityLink = new Intent(intent);
-            return false;
-        }
-        if (GiftInfoBottomSheet.handleIntent(intent, progress) || UserSelectorBottomSheet.handleIntent(intent, progress)) {
-            return true;
         }
         boolean pushOpened = false;
         long push_user_id = 0;
@@ -7018,7 +6971,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onDestroy() {
-        if (asgramCommunityGate != null) asgramCommunityGate.clear();
         GramWalletStorageAuth.onActivityDestroyed(this);
         isActive = false;
         activeInstanceCount--;
@@ -7182,7 +7134,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
         ConnectionsManager.getInstance(currentAccount).setAppPaused(false, false);
         updateCurrentConnectionState(currentAccount);
-        updateAsgramCommunityGate(true);
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().onResume();
         }
@@ -7359,7 +7310,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 updateCurrentConnectionState(account);
             }
         } else if (id == NotificationCenter.mainUserInfoChanged) {
-            updateAsgramCommunityGate(false);
+
         } else if (id == NotificationCenter.attachMenuBotsDidLoad) {
 
         } else if (id == NotificationCenter.needShowAlert) {
@@ -8506,10 +8457,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
         if (passcodeDialog != null && passcodeDialog.passcodeView.getVisibility() == View.VISIBLE) {
             if (invoked) finish();
-            return false;
-        }
-        if (communityAccessBlocked) {
-            if (invoked) moveTaskToBack(true);
             return false;
         }
         if (bottomSheetTabsOverlay != null && bottomSheetTabsOverlay.isOpen) {

@@ -16,21 +16,11 @@ import com.google.android.play.core.appupdate.AppUpdateOptions;
 import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.UpdateAvailability;
 
-import org.json.JSONObject;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.LaunchActivity;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-
-import javax.net.ssl.HttpsURLConnection;
-
-/** Checks ASGRAM's minimum build against the update available for this Play account. */
+/** Enforces the newer version that Google Play offers to this device. */
 final class AsgramAppUpdate implements Application.ActivityLifecycleCallbacks {
-    private static final String RELEASE_POLICY = "https://asbeks.github.io/asgram/android-release.json";
     private static final String PLAY_LISTING = "https://play.google.com/store/apps/details?id=" + BuildConfig.APPLICATION_ID;
     private static final int UPDATE_REQUEST = 8024;
     private static final long CHECK_INTERVAL_MS = 5 * 60_000L;
@@ -61,72 +51,27 @@ final class AsgramAppUpdate implements Application.ActivityLifecycleCallbacks {
         checking = true;
         int currentRequest = ++request;
         lastCheck = SystemClock.elapsedRealtime();
-        new Thread(() -> {
-            int minimumBuild = fetchMinimumBuild();
-            activity.runOnUiThread(() -> {
-                if (!isCurrent(activity, currentRequest)) return;
-                if (minimumBuild <= BuildConfig.VERSION_CODE) {
-                    checking = false;
-                    dismiss();
-                    return;
-                }
-                manager.getAppUpdateInfo().addOnSuccessListener(info -> {
-                    if (!isCurrent(activity, currentRequest)) return;
-                    checking = false;
-                    int availability = info.updateAvailability();
-                    boolean available = availability == UpdateAvailability.UPDATE_AVAILABLE;
-                    boolean inProgress = availability == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS;
-                    if (!requiresUpdate(BuildConfig.VERSION_CODE, minimumBuild, info.availableVersionCode(),
-                            available || inProgress)) {
-                        dismiss();
-                        return;
-                    }
-                    showUpdateDialog(activity);
-                    if (userRequestedUpdate || inProgress) startUpdate(activity, info);
-                }).addOnFailureListener(error -> {
-                    if (!isCurrent(activity, currentRequest)) return;
-                    checking = false;
-                    dismiss();
-                });
-            });
-        }, "asgram-release-policy").start();
-    }
-
-    static boolean requiresUpdate(int installed, int minimum, int playBuild, boolean available) {
-        return installed > 0 && installed < minimum && available && playBuild >= minimum;
-    }
-
-    private static int fetchMinimumBuild() {
-        HttpsURLConnection connection = null;
-        try {
-            connection = (HttpsURLConnection) new URL(RELEASE_POLICY).openConnection();
-            connection.setConnectTimeout(4_000);
-            connection.setReadTimeout(4_000);
-            connection.setInstanceFollowRedirects(false);
-            connection.setUseCaches(false);
-            connection.setRequestProperty("Accept", "application/json");
-            if (connection.getResponseCode() != HttpsURLConnection.HTTP_OK) return 0;
-            try (InputStream input = connection.getInputStream()) {
-                ByteArrayOutputStream body = new ByteArrayOutputStream();
-                byte[] buffer = new byte[512];
-                int count;
-                while ((count = input.read(buffer)) != -1) {
-                    if (body.size() + count > 4096) return 0;
-                    body.write(buffer, 0, count);
-                }
-                JSONObject policy = new JSONObject(new String(body.toByteArray(), StandardCharsets.UTF_8));
-                Object minimum = policy.opt("minimumBuild");
-                Object latest = policy.opt("latestBuild");
-                if (!BuildConfig.APPLICATION_ID.equals(policy.optString("packageName"))
-                        || !(minimum instanceof Integer) || !(latest instanceof Integer)) return 0;
-                int floor = (Integer) minimum;
-                return floor > 0 && floor <= (Integer) latest ? floor : 0;
+        manager.getAppUpdateInfo().addOnSuccessListener(info -> {
+            if (!isCurrent(activity, currentRequest)) return;
+            checking = false;
+            int availability = info.updateAvailability();
+            boolean available = availability == UpdateAvailability.UPDATE_AVAILABLE;
+            boolean inProgress = availability == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS;
+            if (!requiresUpdate(BuildConfig.VERSION_CODE, info.availableVersionCode(), available || inProgress)) {
+                dismiss();
+                return;
             }
-        } catch (IOException | org.json.JSONException ignored) {
-            return 0;
-        } finally {
-            if (connection != null) connection.disconnect();
-        }
+            showUpdateDialog(activity);
+            if (userRequestedUpdate || inProgress) startUpdate(activity, info);
+        }).addOnFailureListener(error -> {
+            if (!isCurrent(activity, currentRequest)) return;
+            checking = false;
+            dismiss();
+        });
+    }
+
+    static boolean requiresUpdate(int installed, int playBuild, boolean available) {
+        return installed > 0 && available && playBuild > installed;
     }
 
     private boolean isCurrent(Activity activity, int expectedRequest) {

@@ -11,7 +11,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 
 import java.util.EnumMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 /** Checks the signed-in account and joins only the destinations named on the consent screen. */
@@ -20,7 +19,7 @@ public final class AsgramCommunityMembership {
         NEWS("Abdii Sabaa", "ABDII_SABAA", null),
         UNIVERSITY("Abdii Sabaa University", "abdii_sabaa_university", null),
         SPORTS("Abdii Sabaa Ispoortii", null, "7P24H-U3sWdlNzJk"),
-        DISCUSSION("Garee Miidiyaa Abdii Sabaa", "Garee_Abdii_Sabaa", null);
+        AMHARIC("አማርኛ", "abdiisabaa", null);
 
         public final String title;
         final String username, inviteHash;
@@ -66,19 +65,15 @@ public final class AsgramCommunityMembership {
 
     public boolean isBusy() { return busy; }
 
-    public boolean hasAccess() { return hasAccess(states); }
-
-    static boolean hasAccess(Map<Community, Status> states) {
+    public boolean needsSetup() {
         for (Community community : Community.values()) {
-            if (states.get(community) != Status.JOINED) return false;
+            if (!preferences.getBoolean(setupKey(community), false)) return true;
         }
-        return true;
+        return false;
     }
 
-    public boolean canJoin() { return states.containsValue(Status.MISSING); }
-
-    public void check(boolean joinMissing) {
-        if (busy || !sameAccount()) return;
+    public void joinMissing() {
+        if (busy || !sameAccount() || !needsSetup()) return;
         busy = true;
         requestGuid = ConnectionsManager.generateClassGuid();
         states.clear();
@@ -86,15 +81,13 @@ public final class AsgramCommunityMembership {
         onChange.run();
         AndroidUtilities.runOnUIThread(timeout, 30_000);
         for (Community community : Community.values()) {
+            if (preferences.getBoolean(setupKey(community), false)) states.put(community, Status.JOINED);
+        }
+        for (Community community : Community.values()) {
+            if (states.containsKey(community)) continue;
             check(community, status -> {
                 states.put(community, status);
-                if (states.size() != Community.values().length) {
-                    onChange.run();
-                } else if (joinMissing) {
-                    joinNext();
-                } else {
-                    finish();
-                }
+                if (states.size() == Community.values().length) joinNext();
             });
         }
     }
@@ -160,6 +153,10 @@ public final class AsgramCommunityMembership {
     private Status missing(Community community) {
         return preferences.getLong(approvalKey(community), 0) > System.currentTimeMillis()
                 ? Status.APPROVAL_PENDING : Status.MISSING;
+    }
+
+    private String setupKey(Community community) {
+        return "community_setup_done_" + userId + "_" + community.name();
     }
 
     private String approvalKey(Community community) {
@@ -228,9 +225,13 @@ public final class AsgramCommunityMembership {
 
     private void finish() {
         close();
+        if (!sameAccount()) return;
+        SharedPreferences.Editor editor = preferences.edit();
         for (Community community : Community.values()) {
-            if (status(community) == Status.CHECKING) states.put(community, Status.UNAVAILABLE);
+            Status status = status(community);
+            if (status == Status.JOINED || status == Status.APPROVAL_PENDING) editor.putBoolean(setupKey(community), true);
         }
+        editor.apply();
         onChange.run();
     }
 

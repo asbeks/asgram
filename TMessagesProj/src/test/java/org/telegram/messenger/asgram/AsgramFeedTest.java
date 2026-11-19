@@ -113,4 +113,27 @@ public class AsgramFeedTest {
         AsgramFeed.Post second=new AsgramFeed.Post("abdii_sabaa_university/51","Education","abdii_sabaa_university","University","Two","","2026-10-29T09:00:01Z");second.groupedId=7;
         List<AsgramFeed.Post> result=AsgramFeed.mergeAlbums(java.util.Arrays.asList(first,second));assertEquals(2,result.size());assertEquals(second.id,result.get(0).id);
     }
+    @Test public void categorizesTheAmharicChannelSeparately() {
+        String html = "<div class='tgme_widget_message' data-post='abdiisabaa/78'>"
+                + "<div class='tgme_widget_message_text'>ዜና</div></div>";
+        AsgramFeed.Post post = AsgramFeed.parse(html, "abdiisabaa").get(0);
+        assertEquals("አማርኛ", post.category);
+        assertEquals("https://t.me/abdiisabaa/78", post.url);
+        assertEquals("News", AsgramDirectory.publisher("ABDII_SABAA").category);
+    }
+
+    @Test public void togglesTelegramReactionsWithoutChangingServerCounts() {
+        org.telegram.tgnet.TLRPC.TL_messageReactions reactions = new org.telegram.tgnet.TLRPC.TL_messageReactions();
+        org.telegram.tgnet.TLRPC.TL_reactionCount count = new org.telegram.tgnet.TLRPC.TL_reactionCount();
+        org.telegram.tgnet.TLRPC.TL_reactionEmoji previous = new org.telegram.tgnet.TLRPC.TL_reactionEmoji();
+        previous.emoticon = "👍";
+        count.reaction = previous;
+        count.chosen = true;
+        count.count = 22;
+        reactions.results.add(count);
+        assertTrue(AsgramFeed.toggleEmojiReaction(reactions, "👍", 1).isEmpty());
+        assertEquals(1, AsgramFeed.toggleEmojiReaction(reactions, "❤️", 1).size());
+        assertEquals(previous, AsgramFeed.toggleEmojiReaction(reactions, "❤️", 3).get(0));
+        assertEquals(22, count.count);
+    }
 }

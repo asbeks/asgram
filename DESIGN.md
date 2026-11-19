@@ -143,11 +143,11 @@ The active root has five visible destinations: Feed, Chats, Spaces, Settings or 
 
 Feed and Spaces use vertical `RecyclerView` lists with `LinearLayoutManager` and disabled item animation. Their headers scroll with the content. Each has (20dp) side gutters, status/action-bar top clearance and bottom padding equal to the navigation inset plus (104dp), allowing content to scroll clear of root navigation. The earlier custom (780dp) content cap and fixed four-column bottom row are not part of this implementation. Native root navigation has its own maximum width of (408dp), rounded surface and safe-area handling.
 
-The first viewport presents the compact native ASGRAM bar, equal-width Latest/For you sort tabs, separate topic chips and the first publisher/post. There is no separate Feed masthead or channel rail. The sort row is (48dp) high, with a (45dp) label area and a (3dp) selected underline. Topic chips have a visible (36dp) capsule centered within a (48dp) interaction wrapper, with (8dp) gaps. The topics scroll horizontally when they exceed the phone width. Updating or partial-failure status appears only while applicable; a successful refresh leaves no permanent status row.
+The first viewport presents the compact native ASGRAM bar, pinned Latest/For you sort tabs and topic chips and the first publisher/post. There is no separate Feed masthead or channel rail. The sort row is (48dp) high, with a (45dp) label area and a (3dp) selected underline. Topic chips have a visible (36dp) capsule centered within a (48dp) interaction wrapper, with (8dp) gaps. The topics scroll horizontally when they exceed the phone width. Updating or partial-failure status appears only while applicable; a successful refresh leaves no permanent status row.
 
 Every timeline post uses the same sequence and full content width inside the (20dp) screen gutters: publisher identity, text, optional (200dp) media, then three equal action targets and a divider. Publisher avatars are (42dp) circles. The full reader and Feed settings use (22dp) horizontal padding, navigation insets and vertical scrolling. Reader media is (230dp) high before expansion.
 
-**The Chronology Rule.** Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Sorting and topic selection are independent controls: topics are All, News, Education and Sports. Do not turn this Feed-specific ordering into a global navigation rule.
+**The Chronology Rule.** Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Sorting and topic selection are independent controls: topics are All, News, አማርኛ, Education and Sports. Do not turn this Feed-specific ordering into a global navigation rule.
 
 Shared primary/tonal buttons have a minimum (52dp) height. Feed topic wrappers, publisher rows and Open/Save/Share actions use at least (48dp) targets. Small glyph geometry does not define the touch target. Preserve safe-area space and Android Back behavior as these screens evolve.
 
@@ -173,7 +173,7 @@ Primary and tonal buttons are direct, legible native controls. Both use bold tit
 
 ### Chips
 
-Feed sorting and topics have separate forms. Latest/For you are equal-width tabs with (15sp) text and a (3dp) selected underline; the selected label is bold and `primary`, while the other is normal and `secondary`. All/News/Education/Sports are (13sp) topic capsules with (16dp) horizontal padding. A selected topic uses `primary`/`inverse` and bold text; an unselected topic uses `tint`/`text`. The visible (36dp) capsule sits in a (48dp) wrapper that owns the click and accessibility description; native selector feedback uses `outline`. Spaces retains its existing (48dp) category controls and All, Private, Groups, Channels and Bots choices.
+Feed sorting and topics have separate forms. Latest/For you are equal-width tabs with (15sp) text and a (3dp) selected underline; the selected label is bold and `primary`, while the other is normal and `secondary`. All/News/አማርኛ/Education/Sports are (13sp) topic capsules with (16dp) horizontal padding. A selected topic uses `primary`/`inverse` and bold text; an unselected topic uses `tint`/`text`. The visible (36dp) capsule sits in a (48dp) wrapper that owns the click and accessibility description; native selector feedback uses `outline`. Spaces retains its existing (48dp) category controls and All, Private, Groups, Channels and Bots choices.
 
 ### Cards / Containers
 
@@ -193,7 +193,7 @@ Spaces is a native directory over the account's existing private/secret chats, g
 
 ### Community Membership
 
-After Telegram sign-in, an account that needs membership sees the four communities and their current status. **Join all and continue** joins the missing communities for the signed-in account. Accounts with confirmed memberships proceed to the app automatically. **Check again** rechecks memberships when approval or a connection is pending.
+After Telegram sign-in, the Feed offers background channel setup. The consent prompt identifies News, University, Sports and አማርኛ. Once accepted, an unobtrusive **Setting up…** status replaces the action while Telegram checks and joins the missing channels. Other tabs stay usable throughout.
 
 ### Publisher Identity and Channels
 
@@ -201,7 +201,7 @@ Posts identify their real publisher through the native channel avatar, name and 
 
 ### Media and Albums
 
-`BackupImageView` loads Telegram previews. Each album appears in one Feed story and shows all its items in order. A single preview keeps the full content width. Multi-item galleries use two columns, with a full-width first item when the count is odd. Data saving offers a **Load previews** action. Tapping a native tile opens that item in `PhotoViewer`, where users can swipe through the album. Public web previews link to the original Telegram post.
+`BackupImageView` loads Telegram previews. Each album appears in one Feed story and shows all its items in order. A single preview keeps the full content width. Multi-item galleries use two columns, with a full-width first item when the count is odd. Data saving offers a **Load previews** action. Tapping a native tile opens that item in `PhotoViewer`, where users can swipe through the album. Visible native posts use the same view reporting path as channel messages. Standard emoji reactions update the original Telegram message. **Open post** opens the exact message in the native channel with Telegram’s full set of actions.
 
 The reader keeps the full heading and selectable body separate. It offers the same in-post gallery, the original Telegram post and a local save toggle.
 

@@ -18,8 +18,8 @@ Name ASGRAM; associated with Abdii Sabaa Media. Use a distinct ASGRAM icon, not 
 The approved network study is /Users/Apple/Documents/ASGRAM Research/2026-10-28/ASGRAM - Network study and recommendation.md. Official channels: @ABDII_SABAA, @abdii_sabaa_university; sports invitation https://t.me/+7P24H-U3sWdlNzJk; discussion group @Garee_Abdii_Sabaa. Supplied media logo: /Users/Apple/Documents/ABDII SABAA Media/assets/abdii-sabaa-supplied-logo.png. The user authorized Google Play release on October 29, then requested the signed-in media redesign before release.
 ## Product Principles
 - Preserve reliable Telegram communication.
-- Give Feed first position and keep messaging one tap away after membership is confirmed. Use the selected native Telegram theme colors consistently across all screens.
-- Before opening the signed-in app, verify membership in the four official Abdii Sabaa communities. List the destinations and offer one explicit action to join the missing communities.
+- Give Feed first position and keep messaging one tap away. Use the selected native Telegram theme colors consistently across all screens.
+- Offer one action to join the News, University, Sports and Amharic channels after sign-in. Confirm consent first and perform setup in the background.
 - Keep private Telegram data on the user's device/client pathway, not copied to an editorial server.
 - Distinguish tested functionality, configuration dependencies and release status honestly.
 ## Accessibility & Inclusion

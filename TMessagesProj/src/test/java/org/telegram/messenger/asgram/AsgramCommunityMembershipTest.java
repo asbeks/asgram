@@ -2,25 +2,18 @@ package org.telegram.messenger.asgram;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.telegram.messenger.asgram.AsgramCommunityMembership.Community;
 import org.telegram.messenger.asgram.AsgramCommunityMembership.Status;
 import org.telegram.tgnet.TLRPC;
 
-import java.util.EnumMap;
-
 public class AsgramCommunityMembershipTest {
-    @Test public void accessRequiresConfirmedMembershipInAllFourCommunities() {
-        EnumMap<Community, Status> states = new EnumMap<>(Community.class);
-        states.put(Community.NEWS, Status.JOINED);
-        states.put(Community.UNIVERSITY, Status.JOINED);
-        states.put(Community.DISCUSSION, Status.JOINED);
-        assertFalse(AsgramCommunityMembership.hasAccess(states));
-        for (Status state : Status.values()) {
-            states.put(Community.SPORTS, state);
-            assertEquals(state == Status.JOINED, AsgramCommunityMembership.hasAccess(states));
+    @Test public void setupUsesAmharicChannelAndExcludesDiscussionGroup() {
+        assertEquals("abdiisabaa", Community.AMHARIC.username);
+        assertEquals(4, Community.values().length);
+        for (Community channel : Community.values()) {
+            assertFalse("Garee_Abdii_Sabaa".equalsIgnoreCase(channel.username));
         }
     }
 

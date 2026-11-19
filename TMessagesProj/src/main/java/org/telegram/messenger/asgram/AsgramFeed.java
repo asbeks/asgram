@@ -72,7 +72,7 @@ public final class AsgramFeed {
             .replaceAll("\\n{3,}","\n\n").trim();
     }
     public static boolean allowedChannel(String channel) {
-        return "ABDII_SABAA".equalsIgnoreCase(channel) || "abdii_sabaa_university".equalsIgnoreCase(channel);
+        return AsgramDirectory.publisher(channel) != null;
     }
     public static boolean allowedImage(String value) {
         try {
@@ -84,7 +84,8 @@ public final class AsgramFeed {
         } catch (Exception e) { return false; }
     }
     public static List<Post> parse(String html, String channel) {
-        if (!allowedChannel(channel)) throw new IllegalArgumentException("Unrecognized publisher.");
+        AsgramDirectory.Entry publisher = AsgramDirectory.publisher(channel);
+        if (publisher == null) throw new IllegalArgumentException("Unrecognized publisher.");
         Document doc=Jsoup.parse(html);
         List<Post> result=new ArrayList<>();
         Set<String> seen=new HashSet<>();
@@ -104,8 +105,7 @@ public final class AsgramFeed {
                 if (m.find() && allowedImage(m.group(1))) images.add(m.group(1));
             }
             if (text.isEmpty() && images.isEmpty()) continue;
-            String category=channel.equalsIgnoreCase("ABDII_SABAA") ? "News" : "Education";
-            result.add(new Post(id,category,channel,category.equals("News")?"Abdii Sabaa":"Abdii Sabaa University",text,new ArrayList<>(images),time==null?"":time.attr("datetime")));
+            result.add(new Post(id,publisher.category,channel,publisher.title,text,new ArrayList<>(images),time==null?"":time.attr("datetime")));
         }
         result.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));
         return result;
@@ -146,5 +146,32 @@ public final class AsgramFeed {
         }
         return result;
     }
+    /** Build a Telegram reaction update while preserving the user's other selected reactions. */
+    public static List<TLRPC.Reaction> toggleEmojiReaction(TLRPC.MessageReactions reactions, String emoji, int limit) {
+        List<TLRPC.ReactionCount> chosen = new ArrayList<>();
+        boolean removing = false;
+        if (reactions != null) {
+            for (TLRPC.ReactionCount count : reactions.results) {
+                if (!count.chosen || count.reaction instanceof TLRPC.TL_reactionPaid) continue;
+                if (count.reaction instanceof TLRPC.TL_reactionEmoji
+                        && emoji.equals(((TLRPC.TL_reactionEmoji) count.reaction).emoticon)) {
+                    removing = true;
+                } else {
+                    chosen.add(count);
+                }
+            }
+        }
+        chosen.sort(java.util.Comparator.comparingInt(count -> count.chosen_order));
+        List<TLRPC.Reaction> result = new ArrayList<>();
+        int start = removing ? 0 : Math.max(0, chosen.size() - Math.max(0, limit - 1));
+        for (int i = start; i < chosen.size(); i++) result.add(chosen.get(i).reaction);
+        if (!removing && limit > 0) {
+            TLRPC.TL_reactionEmoji selected = new TLRPC.TL_reactionEmoji();
+            selected.emoticon = emoji;
+            result.add(selected);
+        }
+        return result;
+    }
+
     private AsgramFeed() {}
 }

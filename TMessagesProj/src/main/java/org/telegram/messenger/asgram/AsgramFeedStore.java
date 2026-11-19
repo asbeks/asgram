@@ -34,7 +34,8 @@ public final class AsgramFeedStore {
         Map<String,AsgramFeed.Post> merged=new LinkedHashMap<>();
         for(AsgramFeed.Post p:cached(context))merged.put(p.id,p);
         int successes=0;
-        for(String channel:new String[]{"ABDII_SABAA","abdii_sabaa_university"}) {
+        for (AsgramDirectory.Entry publisher : AsgramDirectory.PUBLISHERS) {
+            String channel = publisher.username;
             try {
                 String html=Jsoup.connect("https://t.me/s/"+channel).userAgent("Mozilla/5.0 ASGRAM/0.1").timeout(12_000).maxBodySize(1_500_000).get().outerHtml();
                 List<AsgramFeed.Post> fresh=AsgramFeed.parse(html,channel);
@@ -47,7 +48,7 @@ public final class AsgramFeedStore {
         posts.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));
         if(posts.size()>60)posts=new ArrayList<>(posts.subList(0,60));
         if(successes>0)AsgramUi.prefs(context).edit().putString("public_feed",encode(posts)).putLong("last_sync",System.currentTimeMillis()).apply();
-        return new Result(posts,successes==2);
+        return new Result(posts,successes==AsgramDirectory.PUBLISHERS.size());
     }
     public static synchronized boolean isSaved(Context context,String id) {
         for(AsgramFeed.Post p:saved(context))if(p.id.equals(id))return true;
