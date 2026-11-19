@@ -62,6 +62,12 @@ public class IntroActivity extends BaseFragment {
         LinearLayout top = new LinearLayout(context); top.setGravity(Gravity.CENTER_VERTICAL);
         TextView wordmark = text(context, "ASGRAM", 20, true); wordmark.setLetterSpacing(.025f);
         top.addView(wordmark, new LinearLayout.LayoutParams(0, dp(52), 1));
+        if (AsgramReviewAccess.configured()) {
+            wordmark.setOnLongClickListener(v -> {
+                showReviewerCode(context);
+                return true;
+            });
+        }
         TextView language = text(context, "Language", 13, true); language.setGravity(Gravity.CENTER); language.setPadding(dp(10),0,dp(10),0);
         language.setContentDescription("Choose language"); language.setOnClickListener(v -> presentFragment(new LanguageSelectActivity().setLanguageOnly(true)));
         top.addView(language, new LinearLayout.LayoutParams(-2, dp(48)));
@@ -74,11 +80,10 @@ public class IntroActivity extends BaseFragment {
         art = new ConversationMark(context); art.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         content.addView(art,new LinearLayout.LayoutParams(-1,dp(210)));
         space(context,24,0);
-        TextView headline = text(context,"Closer to\nyour people.",36,true); headline.setLineSpacing(dp(1),1f); content.addView(headline,new LinearLayout.LayoutParams(-1,-2));
+        TextView headline = text(context,"Welcome to\nASGRAM",32,true); headline.setLineSpacing(dp(1),1f); content.addView(headline,new LinearLayout.LayoutParams(-1,-2));
         space(context,16,0);
-        TextView description = text(context,"Your Telegram chats, groups and channels.\nA fresh ASGRAM experience.",16,false); description.setTag("secondary"); description.setLineSpacing(dp(5),1f); content.addView(description,new LinearLayout.LayoutParams(-1,-2));
+        TextView description = text(context,"Sign in with your Telegram account.",16,false); description.setTag("secondary"); description.setLineSpacing(dp(5),1f); content.addView(description,new LinearLayout.LayoutParams(-1,-2));
         space(context,26,0);
-        TextView features = text(context,"Chats  ·  Groups  ·  Channels  ·  Calls",13,true); features.setTag("accent"); content.addView(features,new LinearLayout.LayoutParams(-1,-2));
         space(context,0,1);
         space(context,32,0);
         start = text(context,LocaleController.getString(R.string.StartMessaging),16,true); start.setGravity(Gravity.CENTER); start.setMinimumHeight(dp(56));
@@ -91,27 +96,7 @@ public class IntroActivity extends BaseFragment {
             });
         });
         content.addView(start,new LinearLayout.LayoutParams(-1,dp(56)));
-        if (AsgramLocationDisclosure.isAsgram() && UserConfig.getActivatedAccountsCount() == 0) {
-            TextView review = text(context, "Review demo", 14, true);
-            review.setTag("accent");
-            review.setGravity(Gravity.CENTER);
-            review.setOnClickListener(v -> {
-                if (starting || getParentActivity() == null) return;
-                starting = true;
-                presentFragment(new AsgramReviewActivity());
-            });
-            content.addView(review, new LinearLayout.LayoutParams(-1, dp(48)));
-            if (AsgramReviewAccess.configured()) {
-                TextView access = text(context, "Reviewer sign-in", 14, true);
-                access.setTag("accent");
-                access.setGravity(Gravity.CENTER);
-                access.setOnClickListener(v -> showReviewerCode(context));
-                content.addView(access, new LinearLayout.LayoutParams(-1, dp(48)));
-            }
-
-        } else {
-            space(context,16,0);
-        }
+        space(context,16,0);
         TextView disclosure = text(context,"An unofficial Telegram client\nNot affiliated with Telegram.",12,false); disclosure.setTag("secondary"); disclosure.setGravity(Gravity.CENTER); disclosure.setLineSpacing(dp(3),1f);
         content.addView(disclosure,new LinearLayout.LayoutParams(-1,-2));
         updateColors(); return fragmentView;

@@ -36,3 +36,10 @@ The corresponding modified source is published under the retained GPL license. N
 ## Location privacy correction (0.3.2)
 
 The ASGRAM manifest removes the library's ACCESS_BACKGROUND_LOCATION permission. Current-location features disclose data use before permission requests, including on an upgrade with an existing Android grant. Live sharing has its own explicit disclosure and continues only as a user-initiated foreground location service with an ongoing notification and stop control. New services cannot start while the UI is hidden, and GPS providers refuse access without the corresponding consent and visible-activity or active-sharing state. Foreground and live consents are separate from sign-in. Back, outside dismissal and Not now never count as permission approval. Existing signed-in emulator data is preserved; this correction does not use private chat screenshots. See ASGRAM-LOCATION-REVIEW.md for resubmission evidence and limits.
+
+
+## Required Android updates
+
+ASGRAM checks the public [Android release policy](https://asbeks.github.io/asgram/android-release.json) when the app opens or returns to the foreground. A build below `minimumBuild` shows a required update only when Google Play offers that device a build at or above the minimum. The Update button opens Play's immediate update flow or the ASGRAM store listing. A failed check leaves the app usable.
+
+After a new release is available on Google Play, set `latestBuild` to its version code in `docs/android-release.json`. To require a minimum version, set `minimumBuild` to that published version code and deploy the existing ASGRAM Pages workflow. Set it to `0` to turn off the requirement. Build 14 introduces the check, so earlier installations first need a normal Play update.

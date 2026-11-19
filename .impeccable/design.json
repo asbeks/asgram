@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-29T13:12:51.498192+00:00",
+  "generatedAt": "2026-11-19T05:26:04.980318+00:00",
   "title": "Design System: ASGRAM",
   "extensions": {
     "nativeTheme": {
@@ -36,11 +36,11 @@
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Source/save and supporting settings information; weight follows function."
+        "purpose": "Feed topic labels and post actions at 13sp; supporting settings information retains its existing weight."
       },
       "caption": {
         "displayName": "Caption",
-        "purpose": "Status, source metadata, channel labels and disclosure information; weight follows function."
+        "purpose": "Timeline timestamps and state text; reader metadata and other native labels keep their existing weight."
       },
       "action": {
         "displayName": "Action",
@@ -66,7 +66,7 @@
       "name": "Native filled action",
       "kind": "button",
       "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
-      "html": "<button class=\"ds-action-primary\">Open original in Telegram</button>",
+      "html": "<button class=\"ds-action-primary\">Open in Telegram</button>",
       "css": ".ds-action-primary { color:#111111; background:#64b5ef; font:700 16px sans-serif; min-height:52px; border:0; border-radius:16px; padding:14px 20px; cursor:pointer; } .ds-action-primary:hover,.ds-action-primary:active { background:linear-gradient(#ffffff33,#ffffff33),#64b5ef; } .ds-action-primary:focus-visible { outline:2px solid #64b5ef; outline-offset:3px; }",
       "refersTo": "button-primary"
     },
@@ -74,39 +74,40 @@
       "name": "Native tonal action",
       "kind": "button",
       "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
-      "html": "<button class=\"ds-action-tonal\">Chat themes &amp; appearance</button>",
+      "html": "<button class=\"ds-action-tonal\">Appearance</button>",
       "css": ".ds-action-tonal { color:#64b5ef; background:#2c3c4e; font:700 16px sans-serif; min-height:52px; border:0; border-radius:16px; padding:14px 20px; cursor:pointer; } .ds-action-tonal:hover,.ds-action-tonal:active { background:linear-gradient(#ffffff33,#ffffff33),#2c3c4e; } .ds-action-tonal:focus-visible { outline:2px solid #64b5ef; outline-offset:3px; }",
       "refersTo": "button-secondary"
     },
     {
+      "name": "Feed sort tabs",
+      "kind": "nav",
+      "refersTo": "sort-tab",
+      "description": "Illustrative density-1 HTML translation using the existing darkblue.attheme snapshot before runtime accent overrides. Production is native Android; browser hover/focus are documentation affordances only. Latest/For you sorting is independent of the topic filter.",
+      "html": "<nav class=\"ds-sort\" aria-label=\"Post order\"><button class=\"ds-sort-tab ds-sort-selected\" aria-current=\"true\">Latest</button><button class=\"ds-sort-tab\">For you</button></nav>",
+      "css": ".ds-sort { display:flex; background:#151e27; } .ds-sort-tab { flex:1; height:48px; padding:0 0 3px; border:0; border-bottom:3px solid transparent; color:#f1fdff6f; background:transparent; font:400 15px sans-serif; cursor:pointer; } .ds-sort-selected { border-bottom-color:#64b5ef; color:#64b5ef; font-weight:700; } .ds-sort-tab:hover,.ds-sort-tab:active { background:#2c3c4e; } .ds-sort-tab:focus-visible { outline:2px solid #64b5ef; outline-offset:-2px; }"
+    },
+    {
       "name": "Feed topic row",
       "kind": "chip",
-      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only.",
-      "html": "<div class=\"ds-topics\"><button class=\"ds-topic ds-topic-selected\" aria-pressed=\"true\">Latest</button><button class=\"ds-topic\" aria-pressed=\"false\">For you</button><button class=\"ds-topic\" aria-pressed=\"false\">News</button><button class=\"ds-topic\" aria-pressed=\"false\">Learning</button><button class=\"ds-topic\" aria-pressed=\"false\">Sports</button></div>",
-      "css": ".ds-topics { display:flex; overflow-x:auto; background:#151e27; padding:4px; } .ds-topic { flex-shrink:0; height:48px; border:0; border-radius:24px; padding:0 18px; font:400 14px sans-serif; color:#f1fdff6f; background:transparent; cursor:pointer; } .ds-topic-selected { color:#111111; background:#64b5ef; font-weight:700; } .ds-topic:hover,.ds-topic:active { background:#2c3c4e; } .ds-topic:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }",
-      "refersTo": "feed-chip"
+      "refersTo": "feed-chip",
+      "description": "Illustrative density-1 HTML translation using the existing darkblue.attheme snapshot before runtime accent overrides. Production is native Android; browser hover/focus are documentation affordances only. A 36dp visual capsule sits inside a 48dp native click/accessibility target; the displayed topic is Education.",
+      "html": "<div class=\"ds-topics\"><button class=\"ds-topic-target\" aria-pressed=\"true\"><span class=\"ds-topic ds-topic-selected\">All</span></button><button class=\"ds-topic-target\" aria-pressed=\"false\"><span class=\"ds-topic\">News</span></button><button class=\"ds-topic-target\" aria-pressed=\"false\"><span class=\"ds-topic\">Education</span></button><button class=\"ds-topic-target\" aria-pressed=\"false\"><span class=\"ds-topic\">Sports</span></button></div>",
+      "css": ".ds-topics { display:flex; align-items:center; gap:8px; overflow-x:auto; padding:0 20px 8px; background:#151e27; } .ds-topic-target { display:flex; flex-shrink:0; align-items:center; height:48px; padding:0; border:0; background:transparent; cursor:pointer; } .ds-topic { display:flex; align-items:center; justify-content:center; height:36px; border-radius:24px; padding:0 16px; background:#2c3c4e; color:#ffffff; font:400 13px sans-serif; } .ds-topic-selected { color:#111111; background:#64b5ef; font-weight:700; } .ds-topic-target:hover .ds-topic,.ds-topic-target:active .ds-topic { background:#00000095; } .ds-topic-target:focus-visible { outline:2px solid #64b5ef; outline-offset:-1px; border-radius:24px; }"
     },
     {
       "name": "Native action-bar search",
       "kind": "input",
       "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. The icon and browser field are representative; actual search is Telegram ActionBarMenuItem with native expansion, metrics and keyboard.",
-      "html": "<label class=\"ds-search\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"22\" cy=\"22\" r=\"7\"/><path d=\"M27 27 33 33\"/></g></svg><input class=\"ds-search-input\" type=\"search\" aria-label=\"Search media updates\" placeholder=\"Search media updates\" /></label>",
+      "html": "<label class=\"ds-search\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"22\" cy=\"22\" r=\"7\"/><path d=\"M27 27 33 33\"/></g></svg><input class=\"ds-search-input\" type=\"search\" aria-label=\"Search posts\" placeholder=\"Search posts\" /></label>",
       "css": ".ds-search { display:flex; align-items:center; gap:12px; padding:0 16px; min-height:48px; color:#ffffff; background:#151e27; } .ds-search-input { background:transparent; border:0; color:#ffffff; font:400 16px sans-serif; min-width:0; width:100%; min-height:48px; } .ds-search-input::placeholder { color:#f1fdff6f; } .ds-search:hover { background:#151e27; } .ds-search:focus-within { outline:2px solid #64b5ef; outline-offset:2px; } .ds-search-input:focus-visible { outline:none; }"
     },
     {
-      "name": "Lead story",
+      "name": "Native timeline post",
       "kind": "card",
-      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. The gray media label, generic story text and count demonstrate roles and state, not news content or an actual album. Full media opens native PhotoViewer.",
-      "html": "<article class=\"ds-lead\"><div class=\"ds-lead-media\">Real media preview<button class=\"ds-album\">▣ 5 · Tap to expand</button></div><div class=\"ds-lead-copy\"><p class=\"ds-lead-meta\">Source name · Timestamp</p><h3 class=\"ds-lead-title\">Public story heading</h3><p class=\"ds-lead-excerpt\">The actual public story excerpt appears here.</p><div class=\"ds-lead-actions\"><button class=\"ds-lead-read\">Open post · 5 items →</button><button class=\"ds-lead-save\">Save</button><button class=\"ds-lead-share\" aria-label=\"Share story\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><circle cx=\"16\" cy=\"24\" r=\"3\"/><circle cx=\"31\" cy=\"15\" r=\"3\"/><circle cx=\"31\" cy=\"33\" r=\"3\"/><path d=\"M19 22 28 16M19 26 28 32\"/></g></svg></button></div></div></article>",
-      "css": ".ds-lead { border-radius:16px; background:#1d2733; color:#ffffff; font-family:sans-serif; } .ds-lead-media { position:relative; height:190px; display:flex; justify-content:center; align-items:center; border-radius:12px; background:#2c3c4e; color:#f1fdff6f; font-size:12px; } .ds-album { position:absolute; bottom:8px; right:8px; color:white; background:#111111bb; border:0; border-radius:12px; padding:6px 10px; font:700 12px sans-serif; cursor:pointer; } .ds-lead-copy { padding:16px 16px 0; } .ds-lead-meta { margin:0 0 9px; color:#64b5ef; font-size:12px; font-weight:700; } .ds-lead-title { margin:0; font-size:22px; font-weight:700; line-height:1.3; } .ds-lead-excerpt { margin:10px 0 0; font-size:14px; line-height:1.4; color:#f1fdff6f; } .ds-lead-actions { display:flex; align-items:center; min-height:48px; } .ds-lead-read,.ds-lead-save,.ds-lead-share { color:#64b5ef; border:0; background:transparent; min-height:48px; cursor:pointer; } .ds-lead-read { flex:1; padding:0; text-align:left; font:700 14px sans-serif; } .ds-lead-save { padding:0 12px; font:700 13px sans-serif; } .ds-lead-share { color:#f1fdff6f; width:48px; padding:0; } .ds-album:hover,.ds-lead-read:hover,.ds-lead-save:hover,.ds-lead-share:hover { background:#2c3c4e; } .ds-album:focus-visible,.ds-lead-read:focus-visible,.ds-lead-save:focus-visible,.ds-lead-share:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }",
-      "refersTo": "lead-card"
-    },
-    {
-      "name": "Compact following story",
-      "kind": "card",
-      "description": "Illustrative density-1 HTML translation using the shipped darkblue.attheme base values before runtime accent overrides. The production implementation is native Android; browser hover/focus are preview affordances only. Text and media placeholders identify structure only. Production content comes from real posts.",
-      "html": "<article class=\"ds-compact\"><p class=\"ds-compact-meta\">Source name · Timestamp</p><div class=\"ds-compact-row\"><h3 class=\"ds-compact-title\">Public story heading</h3><button class=\"ds-compact-media\">Media</button></div><div class=\"ds-compact-actions\"><button class=\"ds-compact-read\">Read story →</button><button class=\"ds-compact-save\">Save</button></div></article>",
-      "css": ".ds-compact { background:#151e27; color:#ffffff; padding:12px 20px; font-family:sans-serif; border-bottom:1px solid #00000095; } .ds-compact-meta { color:#64b5ef; font-size:12px; font-weight:700; margin:0 0 9px; } .ds-compact-row { display:flex; align-items:flex-start; gap:14px; } .ds-compact-title { flex:1; font-size:18px; font-weight:700; margin:0; line-height:1.3; } .ds-compact-media { width:92px; height:92px; border:0; border-radius:12px; background:#2c3c4e; color:#f1fdff6f; cursor:pointer; } .ds-compact-actions { display:flex; } .ds-compact-read,.ds-compact-save { min-height:48px; background:transparent; border:0; color:#64b5ef; cursor:pointer; font:700 14px sans-serif; } .ds-compact-read { flex:1; text-align:left; padding:0; } .ds-compact-save { padding:0 12px; font-size:13px; } .ds-compact-media:hover,.ds-compact-read:hover,.ds-compact-save:hover { background:#2c3c4e; } .ds-compact-media:focus-visible,.ds-compact-read:focus-visible,.ds-compact-save:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }"
+      "refersTo": "timeline-post",
+      "description": "Illustrative density-1 HTML translation using the existing darkblue.attheme snapshot before runtime accent overrides. Production is native Android; browser hover/focus are documentation affordances only. Publisher initials, generic text and media ground are role placeholders. This is one recurring post pattern, without a special lead-card or compact-story variant. SVG action symbols are illustrative; native production uses Android glyphs. Native post text is capped at five lines, with a short first source line optionally bold; action glyphs are 17dp with 13sp labels in 48dp targets.",
+      "html": "<article class=\"ds-post\"><button class=\"ds-publisher\"><span class=\"ds-publisher-avatar\">CH</span><span class=\"ds-publisher-copy\"><strong class=\"ds-publisher-name\">Channel name</strong><span class=\"ds-post-time\">Timestamp</span></span></button><p class=\"ds-post-text\"><strong>Original public post</strong><br>The original public channel text appears here before its media. Longer previews open in the native reader.</p><button class=\"ds-post-media\">Real post media preview</button><div class=\"ds-post-actions\"><button class=\"ds-post-action\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 4h6v6m0-6L10 14M10 5H5v15h15v-5\"/></g></svg><span>Open</span></button><button class=\"ds-post-action\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 4h12v17l-6-4-6 4Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/></svg><span>Save</span></button><button class=\"ds-post-action\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"><circle cx=\"5\" cy=\"12\" r=\"2.5\"/><circle cx=\"18\" cy=\"5\" r=\"2.5\"/><circle cx=\"18\" cy=\"19\" r=\"2.5\"/><path d=\"m7 10.7 8.8-4.5M7 13.3l8.8 4.5\"/></g></svg><span>Share</span></button></div></article>",
+      "css": ".ds-post { background:#151e27; color:#ffffff; padding:12px 20px 0; font-family:sans-serif; } .ds-publisher { display:flex; align-items:center; width:100%; min-height:48px; padding:0; border:0; color:#ffffff; background:transparent; text-align:left; cursor:pointer; } .ds-publisher-avatar { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:21px; background:#2c3c4e; color:#64b5ef; font:700 15px sans-serif; } .ds-publisher-copy { display:flex; flex:1; flex-direction:column; gap:4px; margin-left:10px; } .ds-publisher-name { font-size:15px; font-weight:700; } .ds-post-time { color:#f1fdff6f; font-size:12px; } .ds-post-text { margin:12px 0 0; font-size:16px; font-weight:400; line-height:1.35; } .ds-post-media { display:flex; align-items:center; justify-content:center; width:100%; height:200px; margin-top:12px; padding:0; border:0; border-radius:12px; background:#2c3c4e; color:#f1fdff6f; font:400 12px sans-serif; cursor:pointer; } .ds-post-actions { display:flex; padding:4px 0 8px; border-bottom:1px solid #00000095; } .ds-post-action { display:flex; flex:1; align-items:center; justify-content:center; gap:6px; min-height:48px; padding:0; border:0; background:transparent; color:#f1fdff6f; font:700 13px sans-serif; cursor:pointer; } .ds-publisher:hover,.ds-post-media:hover,.ds-post-action:hover { background:#2c3c4e; } .ds-publisher:focus-visible,.ds-post-media:focus-visible,.ds-post-action:focus-visible { outline:2px solid #64b5ef; outline-offset:1px; }"
     },
     {
       "name": "Five-position native navigation",
@@ -117,10 +118,10 @@
     }
   ],
   "narrative": {
-    "northStar": "The Native Media Front Desk",
-    "overview": "ASGRAM puts the Abdii Sabaa network and real public stories at the front of a native Telegram client. A channel rail, clear topic selection and a prominent first story make the Feed easy to scan. Chats remain one tap away. The publisher's supplied logo, ASGRAM naming and client artwork carry the identity; the selected Telegram theme supplies interface colors.\n\nThis is the current internal Android design record, derived from `AsgramHubActivity.java`, `AsgramSpacesActivity.java`, `AsgramUi.java`, `MainTabsActivity.java` and native theme sources. The Feed is active and first in root navigation. It supersedes the archived-directory guidance and fixed forest palette recorded previously. The app remains native Android Java, with Telegram's existing account, messaging, theme controls and media viewer. This document records implemented design, not full feature verification or release status.",
+    "northStar": "The Native Social Timeline",
+    "overview": "ASGRAM puts real public channel posts at the front of a native Telegram client. A compact app bar, clear sorting and topic controls lead directly into repeated publisher-first posts: identity, text, optional media and actions. Chats remain one tap away. The publisher's real identity, ASGRAM naming and client artwork carry the identity; the selected Telegram theme supplies interface colors.\n\nThis is the current native Android design record, derived from `AsgramHubActivity.java`, `IntroActivity.java`, `AsgramSpacesActivity.java`, `AsgramUi.java`, `MainTabsActivity.java` and native theme sources. The Feed is active and first in root navigation. Its social timeline follows comp A in `.impeccable/mocks/feed-social-timeline-20261118.png`; the built native source resolves the actual measurements and behavior. The app remains native Android Java, with Telegram's existing account, messaging, theme controls and media viewer. This document records implemented design, not full feature verification or release status.",
     "keyCharacteristics": [
-      "A media-first Feed with a real publisher/channel rail and a lead story followed by compact stories.",
+      "A media-first Feed with repeated publisher, text, media and action blocks, without a separate lead-card layout.",
       "User-selected Telegram theme roles shared across Feed, Spaces and inherited screens.",
       "Android system sans, scaled text, native navigation, dialogs, keyboard and touch feedback.",
       "Flat custom story surfaces alongside inherited Telegram navigation and full-screen media behavior.",
@@ -139,7 +140,7 @@
       },
       {
         "name": "The Chronology Rule",
-        "body": "Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Topic labels are Latest, For you, News, Learning and Sports; Learning maps to the Education category. Do not turn this Feed-specific ordering into a global navigation rule.",
+        "body": "Latest is the initial default and sorts by descending timestamp without photo promotion. For you is an explicit saved preference that can promote one recent photo post while preserving the remaining order. Sorting and topic selection are independent controls: topics are All, News, Education and Sports. Do not turn this Feed-specific ordering into a global navigation rule.",
         "section": "layout"
       },
       {
@@ -152,8 +153,8 @@
       "Do resolve custom colors through the current Telegram theme and preserve the user's selected theme.",
       "Do retain ASGRAM launcher/client artwork and the actual publisher logo without forcing their colors onto app surfaces.",
       "Do keep native Android text scaling, safe-area insets and (48dp) main action targets.",
-      "Do distinguish lead story, compact following stories, metadata, body and actions through hierarchy and spacing.",
-      "Do preserve Latest chronology, explicit For you selection and a full-text native reader.",
+      "Do keep the repeated publisher, post text, optional media and action sequence clear through hierarchy and spacing.",
+      "Do keep sort tabs independent of topic chips, preserve Latest chronology and retain a full-text native reader.",
       "Do keep albums as one story and expand available items through native PhotoViewer.",
       "Do make loading, partial failure, empty, saved and data-saving states visible in readable native text."
     ],

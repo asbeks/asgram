@@ -36,3 +36,8 @@ Build 13 (0.3.6) adds **Reviewer sign-in** for the dedicated Telegram test accou
 The gateway was deployed separately on the existing VPS, behind a route for ASGRAM on the Fulbek HTTPS host. It rejects requests without the reviewer code and rejects invalid Telegram tokens. Local gateway tests covered invalid credentials, malformed input, replay, rate limits and Telegram failures. A clean signed release install on Android 16 authenticated the expected test account through the production gateway and opened the native Feed, Chats, Spaces, Settings and You views. A separate Telegram API test exercised fresh device authentication. An independent end-to-end voice or video call was outside this verification.
 
 All 25 Java tests, eight packaging tests and three gateway tests passed. Bundletool and the release signature verified. The signed APK and AAB contain matching DEX files. The bundle excludes Android's all-the-time location permission, the reviewer access code and the Telegram gateway session.
+
+
+## Build 14 reviewer sign-in
+
+On a fresh install, touch and hold **ASGRAM** at the upper left of the welcome screen. Enter the existing reviewer code in **Reviewer sign-in**. The offline demo has been removed. Reviewers reach the dedicated Telegram account and can inspect the native Feed, Chats, Spaces, Settings and You screens.
