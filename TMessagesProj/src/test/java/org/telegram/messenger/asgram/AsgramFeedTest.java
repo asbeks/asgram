@@ -62,16 +62,14 @@ public class AsgramFeedTest {
         AsgramFeed.Post old=new AsgramFeed.Post("ABDII_SABAA/45","News","ABDII_SABAA","Abdii Sabaa","Old photo","https://cdn4.telesco.pe/a.jpg","2026-10-20T08:00:00Z");
         assertEquals(newest,AsgramFeed.featuredFirst(java.util.Arrays.asList(newest,old)).get(0));
     }
-    @Test public void discoversOnlyExplicitEditorialDirectoryEntries() {
-        List<String> list=AsgramDirectory.declaredChannels("Contact @advertiser\nASGRAM: @OurSports @OurLearning\nOther @NotOfficial");
-        assertEquals(java.util.Arrays.asList("oursports","ourlearning"),list);
-        assertTrue(AsgramDirectory.declaredChannels("Join @advertiser for more").isEmpty());
+    @Test public void categorizesSportsUnderItsPublicHandle() {
+        String html = "<div class='tgme_widget_message' data-post='AbdiiSabaaIspoortii/42'>"
+                + "<div class='tgme_widget_message_text'>Match report</div></div>";
+        AsgramFeed.Post post = AsgramFeed.parse(html, "AbdiiSabaaIspoortii").get(0);
+        assertEquals("Sports", post.category);
+        assertEquals("https://t.me/AbdiiSabaaIspoortii/42", post.url);
     }
-    @Test public void boundsDirectoryEntriesAndRejectsExecutableLinks() {
-        assertTrue(AsgramDirectory.declaredChannels("ASGRAM: https://evil.example @a").isEmpty());
-        StringBuilder text=new StringBuilder("ASGRAM: ");for(int i=0;i<20;i++)text.append("@channel_").append(i).append(" ");
-        assertEquals(8,AsgramDirectory.declaredChannels(text.toString()).size());
-    }
+
     @Test public void combinesAlbumsWithoutHidingTheCaptionOrLosingPhotos() {
         AsgramFeed.Post first=new AsgramFeed.Post("ABDII_SABAA/50","News","ABDII_SABAA","Abdii Sabaa","","","2026-10-29T09:00:00Z");first.groupedId=7;
         AsgramFeed.Post caption=new AsgramFeed.Post("ABDII_SABAA/51","News","ABDII_SABAA","Abdii Sabaa","Real album caption","","2026-10-29T09:00:01Z");caption.groupedId=7;

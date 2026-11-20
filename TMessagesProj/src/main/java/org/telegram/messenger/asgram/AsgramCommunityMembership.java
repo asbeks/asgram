@@ -10,125 +10,94 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 
-import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
-/** Checks the signed-in account and joins only the destinations named on the consent screen. */
+/** Verifies the signed-in Telegram account. Only the explicit Join action can subscribe it. */
 public final class AsgramCommunityMembership {
-    public enum Community {
-        NEWS("Abdii Sabaa", "ABDII_SABAA", null),
-        UNIVERSITY("Abdii Sabaa University", "abdii_sabaa_university", null),
-        SPORTS("Abdii Sabaa Ispoortii", null, "7P24H-U3sWdlNzJk"),
-        AMHARIC("አማርኛ", "abdiisabaa", null);
-
-        public final String title;
-        final String username, inviteHash;
-
-        Community(String title, String username, String inviteHash) {
-            this.title = title;
-            this.username = username;
-            this.inviteHash = inviteHash;
-        }
-    }
-
-    public enum Status {
-        CHECKING("Checking…"), JOINED("Joined"), MISSING("Membership required"),
-        APPROVAL_PENDING("Waiting for approval"), UNAVAILABLE("Couldn’t verify");
-
-        public final String label;
-
-        Status(String label) { this.label = label; }
-    }
+    public enum Status { JOINED, MISSING, APPROVAL_PENDING, UNAVAILABLE }
 
     private final int account;
     private final long userId;
     private final ConnectionsManager connection;
     private final MessagesController messages;
     private final SharedPreferences preferences;
+    private final List<AsgramDirectory.Entry> entries;
     private final Runnable onChange;
-    private final EnumMap<Community, Status> states = new EnumMap<>(Community.class);
-    private final EnumMap<Community, TLRPC.InputChannel> channels = new EnumMap<>(Community.class);
+    private Map<String, Status> states = new HashMap<>();
+    private final Map<String, Status> checked = new HashMap<>();
+    private final Map<String, TLRPC.InputChannel> channels = new HashMap<>();
     private int requestGuid;
-    private boolean busy;
     private final Runnable timeout = this::finish;
 
-    public AsgramCommunityMembership(int account, long userId, SharedPreferences preferences, Runnable onChange) {
+    public AsgramCommunityMembership(int account, long userId, SharedPreferences preferences,
+                                     List<AsgramDirectory.Entry> entries, Runnable onChange) {
         this.account = account;
         this.userId = userId;
         this.preferences = preferences;
+        this.entries = entries;
         this.onChange = onChange;
         connection = ConnectionsManager.getInstance(account);
         messages = MessagesController.getInstance(account);
     }
 
-    public Status status(Community community) { return states.getOrDefault(community, Status.CHECKING); }
+    public boolean isBusy() { return requestGuid != 0; }
+    public boolean needsJoin() { return states.containsValue(Status.MISSING); }
+    public boolean awaitingApproval() { return states.containsValue(Status.APPROVAL_PENDING); }
+    public boolean needsSetup() { return !allJoined(entries, states); }
 
-    public boolean isBusy() { return busy; }
-
-    public boolean needsSetup() {
-        for (Community community : Community.values()) {
-            if (!preferences.getBoolean(setupKey(community), false)) return true;
+    static boolean allJoined(List<AsgramDirectory.Entry> entries, Map<String, Status> states) {
+        for (AsgramDirectory.Entry entry : entries) {
+            if (states.get(entry.username) != Status.JOINED) return false;
         }
-        return false;
+        return true;
     }
 
-    public void joinMissing() {
-        if (busy || !sameAccount() || !needsSetup()) return;
-        busy = true;
+    public void verify() { start(false); }
+    public void joinMissing() { start(true); }
+
+    private void start(boolean join) {
+        if (isBusy() || !sameAccount() || entries.isEmpty()) return;
         requestGuid = ConnectionsManager.generateClassGuid();
-        states.clear();
+        checked.clear();
         channels.clear();
         onChange.run();
-        AndroidUtilities.runOnUIThread(timeout, 30_000);
-        for (Community community : Community.values()) {
-            if (preferences.getBoolean(setupKey(community), false)) states.put(community, Status.JOINED);
-        }
-        for (Community community : Community.values()) {
-            if (states.containsKey(community)) continue;
-            check(community, status -> {
-                states.put(community, status);
-                if (states.size() == Community.values().length) joinNext();
+        AndroidUtilities.runOnUIThread(timeout, 25_000);
+        for (AsgramDirectory.Entry entry : entries) {
+            check(entry.username, status -> {
+                checked.put(entry.username, status);
+                if (checked.size() == entries.size()) {
+                    if (join) joinNext();
+                    else finish();
+                }
             });
         }
     }
 
-    private void check(Community community, Consumer<Status> result) {
-        if (community.inviteHash != null) {
-            TLRPC.TL_messages_checkChatInvite request = new TLRPC.TL_messages_checkChatInvite();
-            request.hash = community.inviteHash;
-            send(request, (response, error) -> {
-                if (response instanceof TLRPC.TL_chatInviteAlready && !ChatObject.isNotInChat(((TLRPC.ChatInvite) response).chat)) {
-                    clearApproval(community);
-                    result.accept(Status.JOINED);
-                } else if (response instanceof TLRPC.ChatInvite && ((TLRPC.ChatInvite) response).subscription_pricing == null) {
-                    result.accept(missing(community));
-                } else {
-                    result.accept(Status.UNAVAILABLE);
-                }
-            });
-            return;
-        }
-
+    private void check(String username, Consumer<Status> result) {
         TLRPC.TL_contacts_resolveUsername resolve = new TLRPC.TL_contacts_resolveUsername();
-        resolve.username = community.username;
+        resolve.username = username;
         send(resolve, (response, error) -> {
             if (response instanceof TLRPC.TL_contacts_resolvedPeer) {
                 TLRPC.TL_contacts_resolvedPeer resolved = (TLRPC.TL_contacts_resolvedPeer) response;
                 for (TLRPC.Chat chat : resolved.chats) {
-                    if (resolved.peer instanceof TLRPC.TL_peerChannel && chat.id == resolved.peer.channel_id && ChatObject.isChannel(chat)) {
+                    if (resolved.peer instanceof TLRPC.TL_peerChannel && chat.id == resolved.peer.channel_id
+                            && ChatObject.isChannelAndNotMegaGroup(chat)
+                            && username.equalsIgnoreCase(ChatObject.getPublicUsername(chat))) {
                         TLRPC.InputChannel channel = MessagesController.getInputChannel(chat);
-                        channels.put(community, channel);
-                        if (!chat.min && chat.left && !ChatObject.isKickedFromChat(chat)) {
-                            result.accept(missing(community));
-                            return;
-                        }
+                        channels.put(username, channel);
                         TLRPC.TL_channels_getParticipant request = new TLRPC.TL_channels_getParticipant();
                         request.channel = channel;
                         request.participant = new TLRPC.TL_inputPeerSelf();
                         send(request, (membership, failure) -> {
                             Status state = participantStatus(membership, failure);
-                            if (state == Status.JOINED) clearApproval(community);
-                            result.accept(state == Status.MISSING ? missing(community) : state);
+                            if (state == Status.JOINED) preferences.edit().remove(approvalKey(username)).apply();
+                            if (state == Status.MISSING && preferences.getLong(approvalKey(username), 0) > System.currentTimeMillis()) {
+                                state = Status.APPROVAL_PENDING;
+                            }
+                            result.accept(state);
                         });
                         return;
                     }
@@ -150,59 +119,29 @@ public final class AsgramCommunityMembership {
         return "USER_NOT_PARTICIPANT".equals(error) ? Status.MISSING : Status.UNAVAILABLE;
     }
 
-    private Status missing(Community community) {
-        return preferences.getLong(approvalKey(community), 0) > System.currentTimeMillis()
-                ? Status.APPROVAL_PENDING : Status.MISSING;
-    }
-
-    private String setupKey(Community community) {
-        return "community_setup_done_" + userId + "_" + community.name();
-    }
-
-    private String approvalKey(Community community) {
-        return "community_approval_" + userId + "_" + community.name();
-    }
-
-    private void clearApproval(Community community) {
-        String key = approvalKey(community);
-        if (preferences.contains(key)) preferences.edit().remove(key).apply();
+    private String approvalKey(String username) {
+        return "feed_join_approval_" + userId + "_" + username;
     }
 
     private void joinNext() {
-        for (Community community : Community.values()) {
-            if (status(community) != Status.MISSING) continue;
-            states.put(community, Status.CHECKING);
-            onChange.run();
-            TLObject request;
-            if (community.inviteHash != null) {
-                TLRPC.TL_messages_importChatInvite invite = new TLRPC.TL_messages_importChatInvite();
-                invite.hash = community.inviteHash;
-                request = invite;
-            } else {
-                TLRPC.TL_channels_joinChannel join = new TLRPC.TL_channels_joinChannel();
-                join.channel = channels.get(community);
-                request = join;
-            }
-            send(request, (response, error) -> {
+        for (AsgramDirectory.Entry entry : entries) {
+            String username = entry.username;
+            if (checked.get(username) != Status.MISSING) continue;
+            TLRPC.TL_channels_joinChannel join = new TLRPC.TL_channels_joinChannel();
+            join.channel = channels.get(username);
+            send(join, (response, error) -> {
                 if ("INVITE_REQUEST_SENT".equals(error)) {
-                    long retryAfter = System.currentTimeMillis() + 24 * 60 * 60_000L;
-                    preferences.edit().putLong(approvalKey(community), retryAfter).apply();
-                    states.put(community, Status.APPROVAL_PENDING);
+                    preferences.edit().putLong(approvalKey(username), System.currentTimeMillis() + 86_400_000L).apply();
+                    checked.put(username, Status.APPROVAL_PENDING);
                     joinNext();
-                    return;
-                }
-                TLRPC.Updates updates = response instanceof TLRPC.TL_chatInviteJoinResultOk
-                        ? ((TLRPC.TL_chatInviteJoinResultOk) response).updates
-                        : response instanceof TLRPC.Updates ? (TLRPC.Updates) response : null;
-                if (updates != null) messages.processUpdates(updates, false);
-                if (updates != null || "USER_ALREADY_PARTICIPANT".equals(error)) {
-                    check(community, status -> {
-                        // A follow-up check may lag behind a join. Leave it for the next button tap.
-                        states.put(community, status == Status.MISSING ? Status.UNAVAILABLE : status);
+                } else if (response instanceof TLRPC.Updates || "USER_ALREADY_PARTICIPANT".equals(error)) {
+                    if (response instanceof TLRPC.Updates) messages.processUpdates((TLRPC.Updates) response, false);
+                    check(username, status -> {
+                        checked.put(username, status == Status.MISSING ? Status.UNAVAILABLE : status);
                         joinNext();
                     });
                 } else {
-                    states.put(community, Status.UNAVAILABLE);
+                    checked.put(username, Status.UNAVAILABLE);
                     joinNext();
                 }
             });
@@ -226,12 +165,13 @@ public final class AsgramCommunityMembership {
     private void finish() {
         close();
         if (!sameAccount()) return;
-        SharedPreferences.Editor editor = preferences.edit();
-        for (Community community : Community.values()) {
-            Status status = status(community);
-            if (status == Status.JOINED || status == Status.APPROVAL_PENDING) editor.putBoolean(setupKey(community), true);
+        Map<String, Status> result = new HashMap<>();
+        for (AsgramDirectory.Entry entry : entries) {
+            Status status = checked.getOrDefault(entry.username, Status.UNAVAILABLE);
+            if (status == Status.UNAVAILABLE && states.get(entry.username) == Status.JOINED) status = Status.JOINED;
+            result.put(entry.username, status);
         }
-        editor.apply();
+        states = result;
         onChange.run();
     }
 
@@ -239,6 +179,5 @@ public final class AsgramCommunityMembership {
         AndroidUtilities.cancelRunOnUIThread(timeout);
         if (requestGuid != 0) connection.cancelRequestsForGuid(requestGuid);
         requestGuid = 0;
-        busy = false;
     }
 }

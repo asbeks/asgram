@@ -50,6 +50,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.tgnet.tl.TL_update;
 import org.telegram.messenger.asgram.AsgramNativeFeed;
 import org.telegram.messenger.asgram.AsgramDirectory;
+import org.telegram.messenger.asgram.AsgramChannelConfig;
 import org.telegram.messenger.asgram.AsgramCommunityMembership;
 import org.telegram.messenger.R;
 import org.telegram.messenger.browser.Browser;
@@ -85,7 +86,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     private FrameLayout headerHost;
     private AsgramCommunityMembership communitySetup;
     private long communityUserId;
+    private List<AsgramDirectory.Entry> feedChannels;
+    private boolean refreshingChannels;
     private boolean showingFeed;
+    private final Runnable refreshVisibleFeed = () -> {
+        if (showingFeed && !isPaused()) refresh();
+    };
     private final Set<String> viewedPosts = new HashSet<>();
     private final Set<String> pendingReactions = new HashSet<>();
     private LinearLayoutManager layoutManager;
@@ -147,14 +153,20 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             posts.add(new AsgramFeed.Post("asgram_demo/2","Education","asgram_demo","Learning Circle","New study group\nThe group meets on Friday at the library.","",java.time.OffsetDateTime.now().minusMinutes(12).toString()));
             posts.add(new AsgramFeed.Post("asgram_demo/3","Sports","asgram_demo","The Sports Desk","Weekend fixtures\nThe match schedule is out.","",java.time.OffsetDateTime.now().minusMinutes(24).toString()));
             latest=true;applyFilter(false);
-        } else { posts=AsgramFeedStore.cached(context);latest=AsgramUi.prefs(context).getBoolean("latest_first",true);applyFilter(false);refresh(); }
+        } else {
+            feedChannels = AsgramChannelConfig.current(context);
+            posts = AsgramFeedStore.cached(context);
+            latest = AsgramUi.prefs(context).getBoolean("latest_first", true);
+            applyFilter(false);
+        }
         return root;
     }
     private void applyFilter(boolean toTop) {
         if(recycler==null||destroyed)return;
         List<AsgramFeed.Post> source = savedOnly ? savedWithLiveMedia(recycler.getContext()) : posts;
         visible=new ArrayList<>();String term=query.trim().toLowerCase(Locale.ROOT);
-        for(AsgramFeed.Post post:source) {
+        if (feedLocked()) source = java.util.Collections.emptyList();
+        for (AsgramFeed.Post post : source) {
             if(!savedOnly&&!category.equals("All")&&!category.equals(post.category))continue;
             if(!term.isEmpty()&&!(post.text+" "+post.author).toLowerCase(Locale.ROOT).contains(term))continue;
             visible.add(post);
@@ -199,6 +211,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             box.addView(back, AsgramUi.lp(-1, 48));
             return box;
         }
+        if (feedLocked()) return box;
         LinearLayout sort = AsgramUi.row(c);
         for (String label : new String[]{"Latest", "For you"}) {
             final boolean chronological = label.equals("Latest");
@@ -247,68 +260,87 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         return box;
     }
 
+    private boolean feedLocked() {
+        return !sampleContent() && !savedOnly && (feedChannels == null
+                || !feedChannels.isEmpty() && (communitySetup == null || communitySetup.needsSetup()));
+    }
+
     private void showChannels() {
-        if (getParentActivity() == null) return;
-        List<String> labels = new ArrayList<>();
-        List<String> urls = new ArrayList<>();
-        labels.add("Abdii Sabaa"); urls.add("https://t.me/ABDII_SABAA");
-        labels.add("University"); urls.add("https://t.me/abdii_sabaa_university");
-        labels.add("Sports"); urls.add("https://t.me/+7P24H-U3sWdlNzJk");
-        labels.add("Community"); urls.add("https://t.me/Garee_Abdii_Sabaa");
-        for (AsgramDirectory.Entry entry : AsgramNativeFeed.entries(getParentActivity())) {
-            String url = "https://t.me/" + entry.username;
-            if (urls.stream().noneMatch(url::equalsIgnoreCase)) { labels.add(entry.title); urls.add(url); }
+        if (getParentActivity() == null || feedChannels == null || feedChannels.isEmpty()) return;
+        String[] labels = new String[feedChannels.size()];
+        List<AsgramDirectory.Entry> channels = feedChannels;
+        for (int index = 0; index < channels.size(); index++) {
+            labels[index] = channels.get(index).title;
         }
-        new AlertDialog.Builder(getParentActivity()).setTitle("Channels")
-                .setItems(labels.toArray(new String[0]), (dialog, which) -> open(urls.get(which))).show();
+        new AlertDialog.Builder(getParentActivity()).setTitle("Feed channels")
+                .setItems(labels, (dialog, which) -> open("https://t.me/" + channels.get(which).username)).show();
     }
 
-    private View feedStatus(Context c) {
-        LinearLayout notices = AsgramUi.column(c);
-        if (!sampleContent() && !savedOnly && communitySetup != null) {
-            String choice = AsgramUi.prefs(c).getString("community_setup_choice_" + communityUserId, "");
-            if (communitySetup.isBusy()) {
-                LinearLayout row = padded(c, 4, 8);
-                row.addView(AsgramUi.text(c, "Setting up…", 13, palette.secondary, false));
-                notices.addView(row);
-            } else if (choice.isEmpty()) {
-                LinearLayout row = padded(c, 0, 6);
-                TextView action = AsgramUi.button(c, "Set up Abdii Sabaa channels", palette, false, () -> {
-                    if (getParentActivity() == null) return;
-                    new AlertDialog.Builder(getParentActivity()).setTitle("Join Abdii Sabaa channels?")
-                            .setMessage("Join News, University, Sports, and አማርኛ with your Telegram account. You can keep using ASGRAM during setup.")
-                            .setPositiveButton("Join channels", (dialog, which) -> chooseCommunitySetup(true))
-                            .setNegativeButton("Not now", (dialog, which) -> chooseCommunitySetup(false)).show();
-                });
-                row.addView(action, AsgramUi.lp(-1, -2));
-                notices.addView(row);
-            }
+    private View membershipStatus(Context context) {
+        LinearLayout box = padded(context, 22, 20);
+        if (!getUserConfig().isClientActivated()) {
+            box.addView(AsgramUi.text(context, "Sign in to open the ASGRAM Feed.", 15, palette.secondary, false));
+            return box;
         }
-        notices.addView(syncStatus(c));
-        return notices;
+        if (refreshingChannels || communitySetup == null || communitySetup.isBusy()) {
+            box.addView(AsgramUi.text(context, "Setting up…", 15, palette.secondary, false));
+            return box;
+        }
+        box.addView(AsgramUi.text(context, "Join the ASGRAM Feed", 22, palette.text, true));
+        AsgramUi.gap(box, 8);
+        String description = "Follow the Feed channels with your Telegram account to see their posts.";
+        if (communitySetup.awaitingApproval()) {
+            description = "A channel is reviewing your join request. Check again after it's approved.";
+        } else if (!communitySetup.needsJoin()) {
+            description = "Channel membership couldn't be verified. Check your connection and try again.";
+        }
+        box.addView(AsgramUi.text(context, description, 15, palette.secondary, false));
+        AsgramUi.gap(box, 16);
+        if (communitySetup.needsJoin()) {
+            box.addView(AsgramUi.button(context, "Review and join", palette, true, this::confirmChannelJoin), AsgramUi.lp(-1, -2));
+        }
+        box.addView(AsgramUi.button(context, "Check again", palette, !communitySetup.needsJoin(), this::refresh), AsgramUi.lp(-1, -2));
+        return box;
     }
 
-    private void chooseCommunitySetup(boolean join) {
-        if (fragmentView == null || communitySetup == null || getUserConfig().getClientUserId() != communityUserId) return;
-        AsgramUi.prefs(fragmentView.getContext()).edit().putString("community_setup_choice_" + communityUserId,
-                join ? "join" : "skip").apply();
-        if (join) communitySetup.joinMissing();
-        adapter.notifyItemChanged(0);
+    private void confirmChannelJoin() {
+        if (getParentActivity() == null || communitySetup == null || communitySetup.isBusy()) return;
+        AsgramCommunityMembership setup = communitySetup;
+        StringBuilder message = new StringBuilder("Join these Feed channels with your Telegram account?");
+        for (AsgramDirectory.Entry entry : feedChannels) {
+            message.append("\n\n").append(entry.title).append(" (@").append(entry.username).append(')');
+        }
+        new AlertDialog.Builder(getParentActivity()).setTitle("Join Feed channels")
+                .setMessage(message.toString())
+                .setPositiveButton("Join channels", (dialog, which) -> {
+                    if (setup == communitySetup && communityUserId == getUserConfig().getClientUserId()) setup.joinMissing();
+                }).setNegativeButton("Cancel", (dialog, which) -> {}).show();
     }
 
-    private void beginCommunitySetup() {
-        if (sampleContent() || fragmentView == null || !getUserConfig().isClientActivated()) return;
+    private View feedStatus(Context context) {
+        return feedLocked() ? membershipStatus(context) : syncStatus(context);
+    }
+
+    private void checkMembership(Context context, List<AsgramDirectory.Entry> channels) {
         long userId = getUserConfig().getClientUserId();
-        if (userId == communityUserId) return;
-        if (communitySetup != null) communitySetup.close();
-        communityUserId = userId;
-        android.content.SharedPreferences preferences = AsgramUi.prefs(fragmentView.getContext());
-        communitySetup = new AsgramCommunityMembership(currentAccount, userId, preferences,
-                () -> { if (!destroyed && adapter != null) adapter.notifyItemChanged(0); });
-        if ("join".equals(preferences.getString("community_setup_choice_" + userId, ""))) {
-            communitySetup.joinMissing();
+        if (userId != communityUserId || !channels.equals(feedChannels) || communitySetup == null) {
+            if (communitySetup != null) communitySetup.close();
+            request++;
+            loading = false;
+            feedChannels = channels;
+            posts = AsgramFeedStore.cached(context);
+            communityUserId = userId;
+            communitySetup = userId == 0 ? null : new AsgramCommunityMembership(
+                    currentAccount, userId, AsgramUi.prefs(context), channels, this::membershipChanged);
         }
-        adapter.notifyItemChanged(0);
+        if (communitySetup != null && !channels.isEmpty()) communitySetup.verify();
+        membershipChanged();
+    }
+
+    private void membershipChanged() {
+        if (destroyed) return;
+        applyFilter(false);
+        if (communitySetup != null && !communitySetup.needsSetup() && !communitySetup.isBusy()) refreshPosts();
     }
 
     private View syncStatus(Context c) {
@@ -337,11 +369,6 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         box.addView(AsgramUi.button(c, savedOnly ? "Back to feed" : "Refresh", palette, true, () -> {
             if (savedOnly) { savedOnly = false; applyFilter(true); } else refresh();
         }), AsgramUi.lp(-1, -2));
-        if (category.equals("Sports") && !savedOnly) {
-            AsgramUi.gap(box, 8);
-            box.addView(AsgramUi.button(c, "Open sports channel", palette, false,
-                    () -> open("https://t.me/+7P24H-U3sWdlNzJk")), AsgramUi.lp(-1, -2));
-        }
         return box;
     }
 
@@ -661,11 +688,31 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         getParentActivity().startActivity(Intent.createChooser(intent,"Share story"));
     }
     private void refresh() {
-        if(sampleContent())return;
-        if(loading||fragmentView==null||destroyed)return;loading=true;applyFilter(false);final int generation=++request;
-        final Context c=fragmentView.getContext().getApplicationContext();
-        AsgramNativeFeed.refresh(c,currentAccount,classGuid,(result,all)->{
-            if(destroyed||generation!=request)return;posts=result;complete=all;loading=false;applyFilter(false);
+        if (sampleContent() || refreshingChannels || destroyed || fragmentView == null) return;
+        refreshingChannels = true;
+        applyFilter(false);
+        Context context = fragmentView.getContext().getApplicationContext();
+        AsgramChannelConfig.refresh(context, channels -> {
+            refreshingChannels = false;
+            if (destroyed) return;
+            checkMembership(context, channels);
+            AndroidUtilities.cancelRunOnUIThread(refreshVisibleFeed);
+            if (showingFeed) AndroidUtilities.runOnUIThread(refreshVisibleFeed, 300_000);
+        });
+    }
+
+    private void refreshPosts() {
+        if (loading || feedChannels == null || fragmentView == null || destroyed) return;
+        loading = true;
+        applyFilter(false);
+        final int generation = ++request;
+        final Context context = fragmentView.getContext().getApplicationContext();
+        AsgramNativeFeed.refresh(context, currentAccount, classGuid, feedChannels, (result, all) -> {
+            if (destroyed || generation != request) return;
+            posts = result;
+            complete = all;
+            loading = false;
+            applyFilter(false);
         });
     }
     @Override public void onResume() {
@@ -674,22 +721,24 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             AsgramUi.Palette next=new AsgramUi.Palette(fragmentView.getContext());
             if(palette.dark!=next.dark||palette.background!=next.background||palette.primary!=next.primary||palette.text!=next.text){palette=next;fragmentView.setBackgroundColor(palette.background);actionBar.setBackgroundColor(palette.background);actionBar.setTitleColor(palette.text);actionBar.setSubtitleColor(palette.secondary);actionBar.setItemsColor(palette.text,false);}
             applyFilter(false);
+            if (showingFeed) refresh();
         }
     }
     @Override public void onBecomeFullyVisible() {
         super.onBecomeFullyVisible();
         showingFeed = true;
-        beginCommunitySetup();
+        refresh();
         if (recycler != null) recycler.post(this::recordVisiblePosts);
     }
 
     @Override public void onBecomeFullyHidden() {
         showingFeed = false;
+        AndroidUtilities.cancelRunOnUIThread(refreshVisibleFeed);
         super.onBecomeFullyHidden();
     }
 
     private void recordVisiblePosts() {
-        if (sampleContent() || !showingFeed || isPaused() || recycler == null || !recycler.isShown() || !recycler.hasWindowFocus()) return;
+        if (sampleContent() || feedLocked() || !showingFeed || isPaused() || recycler == null || !recycler.isShown() || !recycler.hasWindowFocus()) return;
         Rect bounds = new Rect();
         for (int index = 0; index < recycler.getChildCount(); index++) {
             View row = recycler.getChildAt(index);
@@ -706,6 +755,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
 
     @Override public void onFragmentDestroy(){
         destroyed=true;
+        AndroidUtilities.cancelRunOnUIThread(refreshVisibleFeed);
         request++;
         if (communitySetup != null) communitySetup.close();
         if(!sampleContent()) ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);
@@ -715,7 +765,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     @Override public boolean canParentTabsSlide(MotionEvent e,boolean forward){return false;}
     @Override public void onParentScrollToTop(){if(recycler!=null)recycler.smoothScrollToPosition(0);}
     private final class FeedAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        @Override public int getItemCount(){return 1+Math.max(1,visible.size());}
+        @Override public int getItemCount(){return feedLocked() ? 1 : 1+Math.max(1,visible.size());}
         @Override public int getItemViewType(int position){return position==0?0:1;}
         @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,int type){
             FrameLayout frame=new FrameLayout(parent.getContext());frame.setLayoutParams(new RecyclerView.LayoutParams(-1,-2));return new RecyclerView.ViewHolder(frame){};

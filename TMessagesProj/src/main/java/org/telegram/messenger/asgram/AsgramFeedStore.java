@@ -5,20 +5,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
 import org.telegram.ui.asgram.AsgramUi;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public final class AsgramFeedStore {
-    public static final class Result {
-        public final List<AsgramFeed.Post> posts; public final boolean complete;
-        public Result(List<AsgramFeed.Post> posts,boolean complete) {this.posts=posts;this.complete=complete;}
-    }
     public static List<AsgramFeed.Post> cached(Context context) {
         String data=AsgramUi.prefs(context).getString("public_feed","");
         if (data.isEmpty()) {
@@ -28,40 +21,20 @@ public final class AsgramFeedStore {
                 data=out.toString("UTF-8");
             } catch(Exception ignored) {}
         }
-        return decodeFor(context,data);
-    }
-    public static Result refresh(Context context) {
-        Map<String,AsgramFeed.Post> merged=new LinkedHashMap<>();
-        for(AsgramFeed.Post p:cached(context))merged.put(p.id,p);
-        int successes=0;
-        for (AsgramDirectory.Entry publisher : AsgramDirectory.PUBLISHERS) {
-            String channel = publisher.username;
-            try {
-                String html=Jsoup.connect("https://t.me/s/"+channel).userAgent("Mozilla/5.0 ASGRAM/0.1").timeout(12_000).maxBodySize(1_500_000).get().outerHtml();
-                List<AsgramFeed.Post> fresh=AsgramFeed.parse(html,channel);
-                if(fresh.isEmpty())continue;
-                successes++;
-                for(AsgramFeed.Post p:fresh)merged.put(p.id,p);
-            } catch(Exception ignored) {}
-        }
-        List<AsgramFeed.Post> posts=new ArrayList<>(merged.values());
-        posts.sort((a,b)->Long.compare(b.timestamp(),a.timestamp()));
-        if(posts.size()>60)posts=new ArrayList<>(posts.subList(0,60));
-        if(successes>0)AsgramUi.prefs(context).edit().putString("public_feed",encode(posts)).putLong("last_sync",System.currentTimeMillis()).apply();
-        return new Result(posts,successes==AsgramDirectory.PUBLISHERS.size());
+        return decode(data, AsgramChannelConfig.current(context));
     }
     public static synchronized boolean isSaved(Context context,String id) {
-        for(AsgramFeed.Post p:saved(context))if(p.id.equals(id))return true;
+        for(AsgramFeed.Post p:saved(context))if(p.id.equalsIgnoreCase(id))return true;
         return false;
     }
     public static synchronized boolean toggleSave(Context context,AsgramFeed.Post post) {
-        List<AsgramFeed.Post> posts=saved(context);boolean removed=posts.removeIf(p->p.id.equals(post.id));
+        List<AsgramFeed.Post> posts=saved(context);boolean removed=posts.removeIf(p->p.id.equalsIgnoreCase(post.id));
         if(!removed)posts.add(0,post);
         if(posts.size()>200)posts=new ArrayList<>(posts.subList(0,200));
         AsgramUi.prefs(context).edit().putString("saved_articles",encode(posts)).apply();
         return !removed;
     }
-    public static List<AsgramFeed.Post> saved(Context context) {return decodeFor(context,AsgramUi.prefs(context).getString("saved_articles","[]"));}
+    public static List<AsgramFeed.Post> saved(Context context) {return decode(AsgramUi.prefs(context).getString("saved_articles","[]"), null);}
     public static boolean canLoadPhotos(Context context) {
         if(!AsgramUi.prefs(context).getBoolean("data_saver",true))return true;
         try {
@@ -83,19 +56,27 @@ public final class AsgramFeedStore {
         return array.toString();
     }
     public static void cache(Context c,List<AsgramFeed.Post> posts){AsgramUi.prefs(c).edit().putString("public_feed",encode(posts)).apply();}
-    private static List<AsgramFeed.Post> decodeFor(Context c,String data){
-        java.util.Set<String> channels=new java.util.HashSet<>();
-        try {JSONArray entries=new JSONArray(AsgramUi.prefs(c).getString("directory_verified","[]"));for(int i=0;i<Math.min(entries.length(),8);i++){String name=entries.getJSONObject(i).getString("username");if(name.matches("[A-Za-z][A-Za-z0-9_]{4,31}"))channels.add(name.toLowerCase(java.util.Locale.ROOT));}}catch(Exception ignored){}
-        return decode(data,channels);
+    public static List<AsgramFeed.Post> decode(String data) {
+        return decode(data, AsgramDirectory.PUBLISHERS);
     }
-    public static List<AsgramFeed.Post> decode(String data){return decode(data,java.util.Collections.emptySet());}
-    private static List<AsgramFeed.Post> decode(String data,java.util.Set<String> trusted) {
+
+    static List<AsgramFeed.Post> decode(String data, List<AsgramDirectory.Entry> publishers) {
+        java.util.Map<String, String> categories = new java.util.HashMap<>();
+        if (publishers != null) {
+            for (AsgramDirectory.Entry entry : publishers) {
+                categories.put(entry.username.toLowerCase(java.util.Locale.ROOT), entry.category);
+            }
+        }
         List<AsgramFeed.Post> posts=new ArrayList<>();
         try {
             JSONArray array=new JSONArray(data);
             for(int i=0;i<Math.min(array.length(),200);i++) {
                 JSONObject j=array.getJSONObject(i);String channel=j.optString("channel"),id=j.optString("id");
-                if(!(AsgramFeed.allowedChannel(channel)||trusted.contains(channel.toLowerCase(java.util.Locale.ROOT)))||!id.matches("(?i)"+java.util.regex.Pattern.quote(channel)+"/[0-9]+"))continue;
+                if (!channel.matches("[A-Za-z][A-Za-z0-9_]{3,31}") ||
+                        !id.matches("(?i)" + java.util.regex.Pattern.quote(channel) + "/[0-9]+")) continue;
+                String category = publishers == null ? j.optString("category")
+                        : categories.get(channel.toLowerCase(java.util.Locale.ROOT));
+                if (category == null) continue;
                 java.util.Set<String> images = new java.util.LinkedHashSet<>();
                 String image = j.optString("image");
                 if (AsgramFeed.allowedImage(image)) images.add(image);
@@ -106,7 +87,7 @@ public final class AsgramFeedStore {
                         if (AsgramFeed.allowedImage(url)) images.add(url);
                     }
                 }
-                AsgramFeed.Post post=new AsgramFeed.Post(id,j.optString("category"),channel,j.optString("author"),j.optString("text"),new ArrayList<>(images),j.optString("date"));post.groupedId=j.optLong("grouped_id",0);posts.add(post);
+                AsgramFeed.Post post=new AsgramFeed.Post(id,category,channel,j.optString("author"),j.optString("text"),new ArrayList<>(images),j.optString("date"));post.groupedId=j.optLong("grouped_id",0);posts.add(post);
             }
         } catch(Exception ignored) {}
         return posts;

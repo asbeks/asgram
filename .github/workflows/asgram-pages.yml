@@ -7,6 +7,23 @@ on:
       - docs/**
       - .github/workflows/asgram-pages.yml
   workflow_dispatch:
+    inputs:
+      action:
+        description: Feed channel action
+        default: publish
+        type: choice
+        options: [publish, add-or-update, remove]
+      channel:
+        description: Public Telegram @username or t.me link
+        type: string
+      title:
+        description: Display name (add or update)
+        type: string
+      category:
+        description: Feed topic (add or update)
+        type: choice
+        default: News
+        options: [News, Education, Sports, አማርኛ]
 
 permissions:
   contents: read
@@ -18,7 +35,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  update-channels:
+    if: github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch && inputs.action != 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      revision: ${{ steps.save.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: |
+            docs
+            Tools/asgram/manage_feed_channels.py
+          sparse-checkout-cone-mode: false
+      - name: Validate and save channel directory
+        id: save
+        env:
+          CHANNEL_ACTION: ${{ inputs.action }}
+          CHANNEL_USERNAME: ${{ inputs.channel }}
+          CHANNEL_TITLE: ${{ inputs.title }}
+          CHANNEL_CATEGORY: ${{ inputs.category }}
+        run: |
+          python3 Tools/asgram/manage_feed_channels.py -- "$CHANNEL_ACTION" "$CHANNEL_USERNAME" "$CHANNEL_TITLE" "$CHANNEL_CATEGORY"
+          if ! git diff --quiet -- docs/feed-channels.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -- docs/feed-channels.json
+            git commit -m 'Update ASGRAM Feed channels'
+            git push origin HEAD
+          fi
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: update-channels
+    if: always() && github.ref_name == github.event.repository.default_branch && (needs.update-channels.result == 'success' || needs.update-channels.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
@@ -28,6 +81,7 @@ jobs:
       - name: Check out website files only
         uses: actions/checkout@v6
         with:
+          ref: ${{ needs.update-channels.outputs.revision || github.sha }}
           fetch-depth: 1
           submodules: false
           persist-credentials: false

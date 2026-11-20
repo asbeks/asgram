@@ -2,19 +2,27 @@ package org.telegram.messenger.asgram;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.telegram.messenger.asgram.AsgramCommunityMembership.Community;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.telegram.messenger.asgram.AsgramCommunityMembership.Status;
 import org.telegram.tgnet.TLRPC;
 
 public class AsgramCommunityMembershipTest {
-    @Test public void setupUsesAmharicChannelAndExcludesDiscussionGroup() {
-        assertEquals("abdiisabaa", Community.AMHARIC.username);
-        assertEquals(4, Community.values().length);
-        for (Community channel : Community.values()) {
-            assertFalse("Garee_Abdii_Sabaa".equalsIgnoreCase(channel.username));
+    @Test public void everyConfiguredChannelMustBeJoined() {
+        Map<String, Status> membership = new HashMap<>();
+        for (AsgramDirectory.Entry channel : AsgramDirectory.PUBLISHERS) {
+            membership.put(channel.username, Status.JOINED);
         }
+        assertTrue(AsgramCommunityMembership.allJoined(AsgramDirectory.PUBLISHERS, membership));
+        AsgramDirectory.Entry addition = new AsgramDirectory.Entry("testsource", "Test", "News");
+        assertFalse(AsgramCommunityMembership.allJoined(Collections.singletonList(addition), membership));
+        membership.put(addition.username, Status.APPROVAL_PENDING);
+        assertFalse(AsgramCommunityMembership.allJoined(Collections.singletonList(addition), membership));
+        assertTrue(AsgramCommunityMembership.allJoined(Collections.emptyList(), membership));
     }
 
     @Test public void classifiesMembershipFromTelegramRatherThanNetworkErrors() {
