@@ -21,7 +21,7 @@ public final class AsgramFeedStore {
                 data=out.toString("UTF-8");
             } catch(Exception ignored) {}
         }
-        return decode(data, AsgramChannelConfig.current(context));
+        return decode(data, AsgramChannelConfig.current(context).channels);
     }
     public static synchronized boolean isSaved(Context context,String id) {
         for(AsgramFeed.Post p:saved(context))if(p.id.equalsIgnoreCase(id))return true;

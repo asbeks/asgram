@@ -39,6 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -71,7 +72,7 @@ import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 
-public final class AsgramHubActivity extends BaseFragment implements MainTabsActivity.TabFragmentDelegate {
+public final class AsgramHubActivity extends BaseFragment implements MainTabsActivity.TabFragmentDelegate, NotificationCenter.NotificationCenterDelegate {
     // The debug-only screenshot activity supplies synthetic content before any capture.
     private boolean storePreview;
     private boolean sampleContent() { return storePreview; }
@@ -88,6 +89,8 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     private long communityUserId;
     private List<AsgramDirectory.Entry> feedChannels;
     private boolean refreshingChannels;
+    private boolean membershipRequired = true;
+    private boolean reconnecting;
     private boolean showingFeed;
     private final Runnable refreshVisibleFeed = () -> {
         if (showingFeed && !isPaused()) refresh();
@@ -97,6 +100,28 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     private LinearLayoutManager layoutManager;
     private FeedAdapter adapter;
     private int request;
+
+    @Override public boolean onFragmentCreate() {
+        if (!super.onFragmentCreate()) return false;
+        if (!sampleContent()) getNotificationCenter().addObserver(this, NotificationCenter.didUpdateConnectionState);
+        return true;
+    }
+
+    @Override public void didReceivedNotification(int id, int account, Object... args) {
+        if (id != NotificationCenter.didUpdateConnectionState || account != currentAccount || destroyed) return;
+        if (telegramUnavailable()) {
+            reconnecting = true;
+            applyFilter(false);
+        } else if (reconnecting) {
+            reconnecting = false;
+            if (showingFeed && !isPaused()) refresh();
+        }
+    }
+
+    private boolean telegramUnavailable() {
+        int state = ConnectionsManager.getInstance(currentAccount).getConnectionState();
+        return state != ConnectionsManager.ConnectionStateConnected && state != ConnectionsManager.ConnectionStateUpdating;
+    }
 
     @Override public View createView(Context context) {
         destroyed=false;
@@ -154,7 +179,10 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
             posts.add(new AsgramFeed.Post("asgram_demo/3","Sports","asgram_demo","The Sports Desk","Weekend fixtures\nThe match schedule is out.","",java.time.OffsetDateTime.now().minusMinutes(24).toString()));
             latest=true;applyFilter(false);
         } else {
-            feedChannels = AsgramChannelConfig.current(context);
+            AsgramChannelConfig.Settings settings = AsgramChannelConfig.current(context);
+            feedChannels = settings.channels;
+            membershipRequired = settings.requireMembership;
+            reconnecting = telegramUnavailable();
             posts = AsgramFeedStore.cached(context);
             latest = AsgramUi.prefs(context).getBoolean("latest_first", true);
             applyFilter(false);
@@ -261,7 +289,7 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
     }
 
     private boolean feedLocked() {
-        return !sampleContent() && !savedOnly && (feedChannels == null
+        return !sampleContent() && !savedOnly && membershipRequired && (feedChannels == null
                 || !feedChannels.isEmpty() && (communitySetup == null || communitySetup.needsSetup()));
     }
 
@@ -280,6 +308,10 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         LinearLayout box = padded(context, 22, 20);
         if (!getUserConfig().isClientActivated()) {
             box.addView(AsgramUi.text(context, "Sign in to open the ASGRAM Feed.", 15, palette.secondary, false));
+            return box;
+        }
+        if (telegramUnavailable()) {
+            box.addView(AsgramUi.text(context, "Connecting to Telegram… The Feed will refresh automatically.", 15, palette.secondary, false));
             return box;
         }
         if (refreshingChannels || communitySetup == null || communitySetup.isBusy()) {
@@ -321,29 +353,37 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         return feedLocked() ? membershipStatus(context) : syncStatus(context);
     }
 
-    private void checkMembership(Context context, List<AsgramDirectory.Entry> channels) {
+    private void checkMembership(Context context, AsgramChannelConfig.Settings settings) {
+        List<AsgramDirectory.Entry> channels = settings.channels;
+        boolean requirementChanged = membershipRequired != settings.requireMembership;
+        membershipRequired = settings.requireMembership;
         long userId = getUserConfig().getClientUserId();
-        if (userId != communityUserId || !channels.equals(feedChannels) || communitySetup == null) {
+        if (requirementChanged || userId != communityUserId || !channels.equals(feedChannels) || (membershipRequired && communitySetup == null)) {
             if (communitySetup != null) communitySetup.close();
             request++;
             loading = false;
             feedChannels = channels;
             posts = AsgramFeedStore.cached(context);
             communityUserId = userId;
-            communitySetup = userId == 0 ? null : new AsgramCommunityMembership(
+            communitySetup = userId == 0 || !membershipRequired ? null : new AsgramCommunityMembership(
                     currentAccount, userId, AsgramUi.prefs(context), channels, this::membershipChanged);
         }
-        if (communitySetup != null && !channels.isEmpty()) communitySetup.verify();
+        if (communitySetup != null && !channels.isEmpty() && !telegramUnavailable()) communitySetup.verify();
         membershipChanged();
     }
 
     private void membershipChanged() {
         if (destroyed) return;
         applyFilter(false);
-        if (communitySetup != null && !communitySetup.needsSetup() && !communitySetup.isBusy()) refreshPosts();
+        if (!telegramUnavailable() && !feedLocked() && (communitySetup == null || !communitySetup.isBusy())) refreshPosts();
     }
 
     private View syncStatus(Context c) {
+        if (!sampleContent() && !savedOnly && telegramUnavailable()) {
+            LinearLayout notice = padded(c, 4, 8);
+            notice.addView(AsgramUi.text(c, "Connecting to Telegram…", 13, palette.secondary, false));
+            return notice;
+        }
         if (sampleContent() || savedOnly || (loading && visible.isEmpty()) || (!loading && complete)) return new View(c);
         LinearLayout box = padded(c, 0, 8);
         TextView status = AsgramUi.text(c, loading ? "Updating…" : "Some channels couldn't refresh. Tap to retry.", 12, palette.secondary, false);
@@ -692,12 +732,12 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         refreshingChannels = true;
         applyFilter(false);
         Context context = fragmentView.getContext().getApplicationContext();
-        AsgramChannelConfig.refresh(context, channels -> {
+        AsgramChannelConfig.refresh(context, settings -> {
             refreshingChannels = false;
             if (destroyed) return;
-            checkMembership(context, channels);
+            checkMembership(context, settings);
             AndroidUtilities.cancelRunOnUIThread(refreshVisibleFeed);
-            if (showingFeed) AndroidUtilities.runOnUIThread(refreshVisibleFeed, 300_000);
+            if (showingFeed) AndroidUtilities.runOnUIThread(refreshVisibleFeed, settings.refreshMinutes * 60_000L);
         });
     }
 
@@ -758,7 +798,10 @@ public final class AsgramHubActivity extends BaseFragment implements MainTabsAct
         AndroidUtilities.cancelRunOnUIThread(refreshVisibleFeed);
         request++;
         if (communitySetup != null) communitySetup.close();
-        if(!sampleContent()) ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);
+        if (!sampleContent()) {
+            getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateConnectionState);
+            ConnectionsManager.getInstance(currentAccount).cancelRequestsForGuid(classGuid);
+        }
         super.onFragmentDestroy();
     }
     @Override public boolean isLightStatusBar(){return palette==null||!palette.dark;}

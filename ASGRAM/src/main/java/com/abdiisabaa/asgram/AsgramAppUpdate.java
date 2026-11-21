@@ -16,6 +16,7 @@ import com.google.android.play.core.appupdate.AppUpdateOptions;
 import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.UpdateAvailability;
 
+import org.telegram.messenger.asgram.AsgramChannelConfig;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.LaunchActivity;
 
@@ -31,6 +32,7 @@ final class AsgramAppUpdate implements Application.ActivityLifecycleCallbacks {
     private Activity dialogOwner;
     private boolean checking;
     private int request;
+    private int promptedBuild;
     private long lastCheck = -CHECK_INTERVAL_MS;
 
     AsgramAppUpdate(Application app) {
@@ -42,7 +44,11 @@ final class AsgramAppUpdate implements Application.ActivityLifecycleCallbacks {
         if (activity.getClass() != LaunchActivity.class) return;
         foreground = activity;
         if (updateDialog != null || SystemClock.elapsedRealtime() - lastCheck >= CHECK_INTERVAL_MS) {
-            check(activity, false);
+            AsgramChannelConfig.refresh(activity, settings -> {
+                if (foreground != activity || activity.isFinishing()) return;
+                if (settings.requireLatestBuild) check(activity, false);
+                else dismiss();
+            });
         }
     }
 
@@ -62,11 +68,15 @@ final class AsgramAppUpdate implements Application.ActivityLifecycleCallbacks {
                 return;
             }
             showUpdateDialog(activity);
-            if (userRequestedUpdate || inProgress) startUpdate(activity, info);
+            if (userRequestedUpdate || inProgress || (promptedBuild != info.availableVersionCode()
+                    && info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE))) {
+                promptedBuild = info.availableVersionCode();
+                startUpdate(activity, info);
+            }
         }).addOnFailureListener(error -> {
             if (!isCurrent(activity, currentRequest)) return;
             checking = false;
-            dismiss();
+            if (updateDialog != null) updateDialog.setMessage("Google Play is temporarily unavailable. Connect and check again.");
         });
     }
 

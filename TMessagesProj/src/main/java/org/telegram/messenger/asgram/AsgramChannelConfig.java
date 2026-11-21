@@ -22,36 +22,51 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public final class AsgramChannelConfig {
-    private static final String URL = "https://asbeks.github.io/asgram/feed-channels.json";
+    private static final String URL = "https://fulbek.com/api/v1/asgram/settings";
     private static final String CACHE_KEY = "feed_channels_v1";
     private static final int MAX_BYTES = 16384;
     private static final DispatchQueue NETWORK = new DispatchQueue("asgramChannelConfig");
 
-    public static List<AsgramDirectory.Entry> current(Context context) {
-        try {
-            return parse(AsgramUi.prefs(context).getString(CACHE_KEY, ""));
-        } catch (JSONException ignored) {
-            return AsgramDirectory.PUBLISHERS;
+    public static final class Settings {
+        public final List<AsgramDirectory.Entry> channels;
+        public final boolean requireMembership;
+        public final boolean requireLatestBuild;
+        public final int refreshMinutes;
+
+        Settings(List<AsgramDirectory.Entry> channels, boolean requireMembership, boolean requireLatestBuild, int refreshMinutes) {
+            this.channels = java.util.Collections.unmodifiableList(channels);
+            this.requireMembership = requireMembership;
+            this.requireLatestBuild = requireLatestBuild;
+            this.refreshMinutes = refreshMinutes;
         }
     }
 
-    public static void refresh(Context context, Consumer<List<AsgramDirectory.Entry>> callback) {
+    public static Settings current(Context context) {
+        try {
+            return parse(AsgramUi.prefs(context).getString(CACHE_KEY, ""));
+        } catch (JSONException ignored) {
+            return new Settings(AsgramDirectory.PUBLISHERS, true, true, 5);
+        }
+    }
+
+    public static void refresh(Context context, Consumer<Settings> callback) {
         Context app = context.getApplicationContext();
         NETWORK.postRunnable(() -> {
             try {
                 String body = download();
-                List<AsgramDirectory.Entry> entries = parse(body);
+                Settings entries = parse(body);
                 AsgramUi.prefs(app).edit().putString(CACHE_KEY, body).apply();
                 AndroidUtilities.runOnUIThread(() -> callback.accept(entries));
             } catch (IOException | JSONException ignored) {
-                List<AsgramDirectory.Entry> entries = current(app);
+                Settings entries = current(app);
                 AndroidUtilities.runOnUIThread(() -> callback.accept(entries));
             }
         });
     }
 
-    static List<AsgramDirectory.Entry> parse(String value) throws JSONException {
-        JSONArray channels = new JSONObject(value).getJSONArray("channels");
+    static Settings parse(String value) throws JSONException {
+        JSONObject config = new JSONObject(value);
+        JSONArray channels = config.getJSONArray("channels");
         if (channels.length() > 12) throw new JSONException("Too many feed channels");
         List<AsgramDirectory.Entry> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -68,7 +83,10 @@ public final class AsgramChannelConfig {
             }
             result.add(new AsgramDirectory.Entry(username, title, category));
         }
-        return result;
+        int refreshMinutes = config.optInt("refreshMinutes", 5);
+        if (refreshMinutes < 2 || refreshMinutes > 30) throw new JSONException("Invalid refresh time");
+        return new Settings(result, config.optBoolean("requireMembership", true),
+                config.optBoolean("requireLatestBuild", true), refreshMinutes);
     }
 
     private static String download() throws IOException {
